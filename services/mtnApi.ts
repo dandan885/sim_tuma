@@ -1,6 +1,8 @@
 // MTN Mobile Money API Integration Service
 // Rwanda MTN Mobile Money API Integration
 
+import { Platform } from 'react-native';
+
 export interface TransactionRequest {
   phoneNumber: string;
   amount: number;
@@ -50,6 +52,14 @@ class MTNMobileMoneyAPI {
   private apiUserId = process.env.EXPO_PUBLIC_MTN_RW_API_USER_ID || 'your_rwanda_api_user_id';
   private apiKey = process.env.EXPO_PUBLIC_MTN_RW_API_KEY || 'your_rwanda_api_key';
 
+  // Check if we should use mock data (for web platform or missing credentials)
+  private shouldUseMockData(): boolean {
+    return Platform.OS === 'web' || 
+           this.subscriptionKey === 'your_rwanda_subscription_key' ||
+           this.apiUserId === 'your_rwanda_api_user_id' ||
+           this.apiKey === 'your_rwanda_api_key';
+  }
+
   // Error handling wrapper
   private async handleApiCall<T>(apiCall: () => Promise<T>): Promise<T> {
     try {
@@ -65,6 +75,11 @@ class MTNMobileMoneyAPI {
 
   // Generate access token
   async generateAccessToken(): Promise<string> {
+    if (this.shouldUseMockData()) {
+      // Return mock token for web platform
+      return 'mock_access_token_' + Date.now();
+    }
+
     return this.handleApiCall(async () => {
       const response = await fetch(`${this.baseUrl}/collection/token/`, {
         method: 'POST',
@@ -85,6 +100,24 @@ class MTNMobileMoneyAPI {
 
   // Request payment from customer
   async requestToPay(request: TransactionRequest): Promise<TransactionResponse> {
+    if (this.shouldUseMockData()) {
+      // Return mock response for web platform
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      return {
+        financialTransactionId: `mock_${request.externalId}`,
+        externalId: request.externalId,
+        amount: request.amount.toString(),
+        currency: request.currency,
+        payer: {
+          partyIdType: 'MSISDN',
+          partyId: request.phoneNumber,
+        },
+        payerMessage: request.payerMessage,
+        payeeNote: request.payeeNote,
+        status: 'SUCCESSFUL',
+      };
+    }
+
     return this.handleApiCall(async () => {
       const accessToken = await this.generateAccessToken();
       
@@ -134,6 +167,24 @@ class MTNMobileMoneyAPI {
 
   // Check transaction status
   async getTransactionStatus(transactionId: string): Promise<TransactionResponse> {
+    if (this.shouldUseMockData()) {
+      // Return mock status for web platform
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      return {
+        financialTransactionId: transactionId,
+        externalId: transactionId,
+        amount: '50000',
+        currency: 'RWF',
+        payer: {
+          partyIdType: 'MSISDN',
+          partyId: '250788123456',
+        },
+        payerMessage: 'Payment completed',
+        payeeNote: 'Transaction successful',
+        status: 'SUCCESSFUL',
+      };
+    }
+
     return this.handleApiCall(async () => {
       const accessToken = await this.generateAccessToken();
       
@@ -156,6 +207,15 @@ class MTNMobileMoneyAPI {
 
   // Get account balance
   async getBalance(): Promise<BalanceResponse> {
+    if (this.shouldUseMockData()) {
+      // Return mock balance for web platform
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+      return {
+        availableBalance: '125450.75',
+        currency: 'RWF',
+      };
+    }
+
     return this.handleApiCall(async () => {
       const accessToken = await this.generateAccessToken();
       
@@ -184,7 +244,7 @@ class MTNMobileMoneyAPI {
   // Get transaction history
   async getTransactionHistory(page: number = 1, pageSize: number = 20): Promise<any[]> {
     return this.handleApiCall(async () => {
-      // Mock transaction history for demo
+      // Always return mock transaction history for demo
       const mockTransactions = [
         {
           id: 'txn_001',
@@ -226,6 +286,25 @@ class MTNMobileMoneyAPI {
 
   // Pay bills (utility payments)
   async payBill(request: BillPaymentRequest): Promise<TransactionResponse> {
+    if (this.shouldUseMockData()) {
+      // Return mock response for web platform
+      await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate API delay
+      const transactionId = `bill_${Date.now()}`;
+      return {
+        financialTransactionId: transactionId,
+        externalId: transactionId,
+        amount: request.amount.toString(),
+        currency: request.currency,
+        payer: {
+          partyIdType: 'MSISDN',
+          partyId: request.accountNumber,
+        },
+        payerMessage: `${request.billType} bill payment`,
+        payeeNote: `Payment for ${request.billType}`,
+        status: 'SUCCESSFUL',
+      };
+    }
+
     return this.handleApiCall(async () => {
       const transactionId = `bill_${Date.now()}`;
       
