@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { Loader2 } from 'lucide-react-native';
+import { Loader as Loader2 } from 'lucide-react-native';
 import { APP_CONSTANTS } from '@/constants/AppConstants';
 
 interface LoadingStateProps {
