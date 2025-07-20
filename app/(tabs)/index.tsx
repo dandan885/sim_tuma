@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Animated,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import {
   Eye,
@@ -17,17 +18,26 @@ import {
   Clock,
   CreditCard,
   RefreshCw,
+  Plus,
+  TrendingUp,
 } from 'lucide-react-native';
 import { useBalance } from '@/hooks/useBalance';
 import { useTransactionHistory } from '@/hooks/useTransactionHistory';
-import { formatCurrency, hiddenBalance } from '@/constants/AppConstants';
-import { AnimatedButton } from '@/components/AnimatedButton';
+import { formatCurrency, hiddenBalance, formatTimeAgo, APP_CONSTANTS } from '@/constants/AppConstants';
+import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
+import { Button } from '@/components/ui/Button';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { ErrorState } from '@/components/ui/ErrorState';
+
+const { width } = Dimensions.get('window');
 
 export default function WalletScreen() {
-  const fadeAnim = new Animated.Value(0);
+  const [fadeAnim] = useState(new Animated.Value(0));
   const { balance, isLoading, error, isHidden, toggleBalanceVisibility, refreshBalance } = useBalance();
   const { transactions, isLoading: transactionsLoading, refreshTransactions } = useTransactionHistory();
   const [refreshing, setRefreshing] = useState(false);
+
+  const isTablet = width >= APP_CONSTANTS.BREAKPOINTS.TABLET;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -44,130 +54,249 @@ export default function WalletScreen() {
   };
 
   const quickActions = [
-    { icon: RefreshCw, label: 'Refresh', color: '#00C896', onPress: refreshBalance },
-    { icon: ArrowUpRight, label: 'Send', color: '#6C63FF' },
-    { icon: ArrowDownLeft, label: 'Request', color: '#00C896' },
-    { icon: Clock, label: 'Schedule', color: '#FFD166' },
+    { 
+      icon: ArrowUpRight, 
+      label: 'Kohereza', 
+      labelEn: 'Send', 
+      color: APP_CONSTANTS.COLORS.PRIMARY,
+      route: '/transfer'
+    },
+    { 
+      icon: ArrowDownLeft, 
+      label: 'Saba', 
+      labelEn: 'Request', 
+      color: APP_CONSTANTS.COLORS.SECONDARY,
+      route: '/request'
+    },
+    { 
+      icon: CreditCard, 
+      label: 'Fagitire', 
+      labelEn: 'Bills', 
+      color: APP_CONSTANTS.COLORS.ACCENT,
+      route: '/bills'
+    },
+    { 
+      icon: Clock, 
+      label: 'Gahunda', 
+      labelEn: 'Schedule', 
+      color: APP_CONSTANTS.COLORS.INFO,
+      route: '/schedule'
+    },
   ];
 
   const displayBalance = isHidden ? hiddenBalance(balance) : formatCurrency(balance);
-  const recentTransactions = transactions.slice(0, 3);
+  const recentTransactions = transactions.slice(0, 5);
+
+  const renderQuickAction = (action: any, index: number) => (
+    <TouchableOpacity
+      key={index}
+      style={[
+        styles.actionButton,
+        { backgroundColor: action.color },
+        isTablet && styles.actionButtonTablet,
+      ]}
+      onPress={() => console.log(`Navigate to ${action.route}`)}>
+      <action.icon size={isTablet ? 28 : 24} color={APP_CONSTANTS.COLORS.TEXT_INVERSE} />
+      <Text style={[styles.actionLabel, isTablet && styles.actionLabelTablet]}>
+        {action.label}
+      </Text>
+      <Text style={[styles.actionLabelEn, isTablet && styles.actionLabelEnTablet]}>
+        {action.labelEn}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderTransaction = (transaction: any) => (
+    <TouchableOpacity key={transaction.id} style={styles.transactionItem}>
+      <View
+        style={[
+          styles.transactionIcon,
+          {
+            backgroundColor: transaction.type === 'received' 
+              ? `${APP_CONSTANTS.COLORS.SECONDARY}20` 
+              : transaction.type === 'sent' 
+              ? `${APP_CONSTANTS.COLORS.PRIMARY}20` 
+              : `${APP_CONSTANTS.COLORS.ACCENT}20`,
+          },
+        ]}>
+        {transaction.type === 'received' ? (
+          <ArrowDownLeft size={20} color={APP_CONSTANTS.COLORS.SECONDARY} />
+        ) : transaction.type === 'sent' ? (
+          <ArrowUpRight size={20} color={APP_CONSTANTS.COLORS.PRIMARY} />
+        ) : (
+          <CreditCard size={20} color={APP_CONSTANTS.COLORS.ACCENT} />
+        )}
+      </View>
+      
+      <View style={styles.transactionDetails}>
+        <Text style={styles.transactionDescription}>
+          {transaction.description}
+        </Text>
+        <Text style={styles.transactionPerson}>
+          {transaction.type === 'received' && transaction.sender
+            ? `Kuva kuri ${transaction.sender} (From ${transaction.sender})`
+            : transaction.type === 'sent' && transaction.recipient
+            ? `Kuri ${transaction.recipient} (To ${transaction.recipient})`
+            : 'Kwishyura Fagitire (Bill Payment)'}
+        </Text>
+        <Text style={styles.transactionTime}>
+          {formatTimeAgo(transaction.timestamp)}
+        </Text>
+      </View>
+      
+      <View style={styles.transactionAmountContainer}>
+        <Text
+          style={[
+            styles.transactionAmount,
+            {
+              color: transaction.type === 'received' 
+                ? APP_CONSTANTS.COLORS.SECONDARY 
+                : transaction.type === 'sent' 
+                ? APP_CONSTANTS.COLORS.PRIMARY 
+                : APP_CONSTANTS.COLORS.ACCENT,
+            },
+          ]}>
+          {transaction.type === 'received' ? '+' : '-'}{formatCurrency(transaction.amount)}
+        </Text>
+        <View style={[
+          styles.statusBadge,
+          { backgroundColor: transaction.status === 'completed' ? APP_CONSTANTS.COLORS.SECONDARY : APP_CONSTANTS.COLORS.WARNING }
+        ]}>
+          <Text style={styles.statusText}>
+            {transaction.status === 'completed' ? 'Byarangiye' : 'Bitegereje'}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LoadingState message="Gukuramo amakuru... (Loading data...)" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error && !balance) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ErrorState 
+          title="Ikibazo cyo gukuramo amakuru (Data Loading Error)"
+          message={error}
+          onRetry={refreshBalance}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={[APP_CONSTANTS.COLORS.PRIMARY]}
+            tintColor={APP_CONSTANTS.COLORS.PRIMARY}
+          />
         }>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>Good morning!</Text>
-          <Text style={styles.username}>Welcome back, Alex</Text>
-        </View>
-
-        {/* Balance Card */}
-        <Animated.View style={[styles.balanceCard, { opacity: fadeAnim }]}>
-          <View style={styles.balanceHeader}>
-            <Text style={styles.balanceLabel}>Total Balance</Text>
-            <TouchableOpacity
-              onPress={toggleBalanceVisibility}
-              style={styles.eyeButton}>
-              {!isHidden ? (
-                <Eye size={20} color="#fff" />
-              ) : (
-                <EyeOff size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.balanceAmount}>
-            {isLoading ? 'Loading...' : displayBalance}
-          </Text>
-          {error && (
-            <Text style={styles.errorText}>{error}</Text>
-          )}
-          <View style={styles.cardInfo}>
-            <Text style={styles.cardNumber}>**** **** **** 1234</Text>
-            <CreditCard size={24} color="#fff" />
-          </View>
-        </Animated.View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          {quickActions.map((action, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.actionButton, { backgroundColor: action.color }]}
-              onPress={action.onPress}>
-              <action.icon size={24} color="#fff" />
-              <Text style={styles.actionLabel}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Recent Transactions */}
-        <View style={styles.transactionsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {transactionsLoading ? (
-            <Text style={styles.loadingText}>Loading transactions...</Text>
-          ) : recentTransactions.length > 0 ? (
-            recentTransactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <View
-                style={[
-                  styles.transactionIcon,
-                  {
-                    backgroundColor:
-                      transaction.type === 'received' ? '#00C896' : 
-                      transaction.type === 'sent' ? '#6C63FF' : '#FFD166',
-                  },
-                ]}>
-                {transaction.type === 'received' ? (
-                  <ArrowDownLeft size={20} color="#fff" />
-                ) : transaction.type === 'sent' ? (
-                  <ArrowUpRight size={20} color="#fff" />
-                ) : (
-                  <CreditCard size={20} color="#fff" />
-                )}
-              </View>
-              <View style={styles.transactionDetails}>
-                <Text style={styles.transactionDescription}>
-                  {transaction.description}
-                </Text>
-                <Text style={styles.transactionPerson}>
-                  {transaction.type === 'received' && transaction.sender
-                    ? `From ${transaction.sender}`
-                    : transaction.type === 'sent' && transaction.recipient
-                    ? `To ${transaction.recipient}`
-                    : 'Bill Payment'}
-                </Text>
-                <Text style={styles.transactionTime}>
-                  {transaction.timestamp.toLocaleDateString()}
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.transactionAmount,
-                  {
-                    color:
-                      transaction.type === 'received' ? '#00C896' : 
-                      transaction.type === 'sent' ? '#6C63FF' : '#FFD166',
-                  },
-                ]}>
-                {transaction.type === 'received' ? '+' : '-'}{formatCurrency(transaction.amount)}
-              </Text>
+        
+        <ResponsiveContainer maxWidth={800}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>Mwaramutse! (Good morning!)</Text>
+              <Text style={styles.username}>Murakaza neza, Alex</Text>
             </View>
-            ))
-          ) : (
-            <Text style={styles.emptyText}>No transactions yet</Text>
-          )}
-        </View>
+            <TouchableOpacity style={styles.profileButton}>
+              <View style={styles.profileAvatar}>
+                <Text style={styles.profileAvatarText}>AU</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Balance Card */}
+          <Animated.View style={[styles.balanceCard, { opacity: fadeAnim }]}>
+            <View style={styles.balanceHeader}>
+              <View>
+                <Text style={styles.balanceLabel}>Amafaranga Yose (Total Balance)</Text>
+                <Text style={styles.balanceAmount}>
+                  {displayBalance}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={toggleBalanceVisibility}
+                style={styles.eyeButton}>
+                {!isHidden ? (
+                  <Eye size={24} color={APP_CONSTANTS.COLORS.TEXT_INVERSE} />
+                ) : (
+                  <EyeOff size={24} color={APP_CONSTANTS.COLORS.TEXT_INVERSE} />
+                )}
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.cardFooter}>
+              <View style={styles.cardInfo}>
+                <Text style={styles.cardNumber}>**** **** **** 1234</Text>
+                <Text style={styles.cardType}>MTN MoMo</Text>
+              </View>
+              <View style={styles.balanceActions}>
+                <TouchableOpacity style={styles.addMoneyButton}>
+                  <Plus size={16} color={APP_CONSTANTS.COLORS.PRIMARY} />
+                  <Text style={styles.addMoneyText}>Kongeramo (Add)</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsContainer}>
+            <Text style={styles.sectionTitle}>Ibikorwa Byihuse (Quick Actions)</Text>
+            <View style={[styles.quickActions, isTablet && styles.quickActionsTablet]}>
+              {quickActions.map(renderQuickAction)}
+            </View>
+          </View>
+
+          {/* Statistics */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <TrendingUp size={24} color={APP_CONSTANTS.COLORS.SECONDARY} />
+              <Text style={styles.statValue}>+12%</Text>
+              <Text style={styles.statLabel}>Ukwezi gushize (This month)</Text>
+            </View>
+            <View style={styles.statCard}>
+              <CreditCard size={24} color={APP_CONSTANTS.COLORS.ACCENT} />
+              <Text style={styles.statValue}>{transactions.length}</Text>
+              <Text style={styles.statLabel}>Ibikorwa (Transactions)</Text>
+            </View>
+          </View>
+
+          {/* Recent Transactions */}
+          <View style={styles.transactionsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Ibikorwa Bya Vuba (Recent Transactions)</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAll}>Byose (View All)</Text>
+              </TouchableOpacity>
+            </View>
+
+            {transactionsLoading ? (
+              <LoadingState size="small" message="Gukuramo ibikorwa... (Loading transactions...)" />
+            ) : recentTransactions.length > 0 ? (
+              <View style={styles.transactionsList}>
+                {recentTransactions.map(renderTransaction)}
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <CreditCard size={48} color={APP_CONSTANTS.COLORS.TEXT_TERTIARY} />
+                <Text style={styles.emptyText}>Nta bikorwa (No transactions yet)</Text>
+                <Text style={styles.emptySubtext}>Tangira kohereza cyangwa kwakira amafaranga</Text>
+              </View>
+            )}
+          </View>
+        </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
   );
@@ -176,164 +305,258 @@ export default function WalletScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: APP_CONSTANTS.COLORS.BACKGROUND,
   },
   header: {
-    padding: 20,
-    paddingTop: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.LG,
   },
   greeting: {
-    fontSize: 16,
-    color: '#2F2F2F',
-    marginBottom: 4,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
+    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
   },
   username: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XXL,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
+    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
+  },
+  profileButton: {
+    padding: APP_CONSTANTS.DESIGN.SPACING.XS,
+  },
+  profileAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: APP_CONSTANTS.COLORS.PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileAvatarText: {
+    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
   },
   balanceCard: {
-    backgroundColor: '#6C63FF',
-    margin: 20,
-    padding: 24,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: APP_CONSTANTS.COLORS.PRIMARY,
+    padding: APP_CONSTANTS.DESIGN.SPACING.XL,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.LARGE,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+    ...APP_CONSTANTS.DESIGN.SHADOWS.LARGE,
   },
   balanceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.LG,
   },
   balanceLabel: {
-    color: '#fff',
-    fontSize: 16,
-    opacity: 0.9,
-  },
-  eyeButton: {
-    padding: 4,
+    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}90`,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
   },
   balanceAmount: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XXXL,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
   },
-  cardInfo: {
+  eyeButton: {
+    padding: APP_CONSTANTS.DESIGN.SPACING.SM,
+  },
+  cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  cardInfo: {
+    flex: 1,
+  },
   cardNumber: {
-    color: '#fff',
-    fontSize: 16,
-    opacity: 0.9,
+    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}80`,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
   },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    marginTop: 8,
+  cardType: {
+    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}60`,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
   },
-  loadingText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
-    padding: 20,
+  balanceActions: {
+    alignItems: 'flex-end',
   },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
-    padding: 20,
+  addMoneyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: APP_CONSTANTS.COLORS.TEXT_INVERSE,
+    paddingHorizontal: APP_CONSTANTS.DESIGN.SPACING.MD,
+    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.SM,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+  },
+  addMoneyText: {
+    marginLeft: APP_CONSTANTS.DESIGN.SPACING.XS,
+    color: APP_CONSTANTS.COLORS.PRIMARY,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+  },
+  quickActionsContainer: {
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+  },
+  sectionTitle: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XL,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
+    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
   },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 30,
+  },
+  quickActionsTablet: {
+    justifyContent: 'space-around',
   },
   actionButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 16,
+    width: '22%',
+    aspectRatio: 1,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.LARGE,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...APP_CONSTANTS.DESIGN.SHADOWS.MEDIUM,
+  },
+  actionButtonTablet: {
+    width: '20%',
+    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
   },
   actionLabel: {
-    color: '#fff',
+    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+    marginTop: APP_CONSTANTS.DESIGN.SPACING.XS,
+    textAlign: 'center',
+  },
+  actionLabelTablet: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+  },
+  actionLabelEn: {
+    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}80`,
     fontSize: 10,
-    fontWeight: '600',
-    marginTop: 4,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  actionLabelEnTablet: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+    gap: APP_CONSTANTS.DESIGN.SPACING.MD,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
+    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+    alignItems: 'center',
+    ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
+  },
+  statValue: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XL,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
+    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
+    marginVertical: APP_CONSTANTS.DESIGN.SPACING.SM,
+  },
+  statLabel: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
   },
   transactionsSection: {
-    paddingHorizontal: 20,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
   },
   viewAll: {
-    color: '#6C63FF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: APP_CONSTANTS.COLORS.PRIMARY,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+  },
+  transactionsList: {
+    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+    ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
   },
   transactionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
+    borderBottomWidth: 1,
+    borderBottomColor: APP_CONSTANTS.COLORS.BORDER_LIGHT,
   },
   transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: APP_CONSTANTS.DESIGN.SPACING.MD,
   },
   transactionDetails: {
     flex: 1,
   },
   transactionDescription: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2F2F2F',
-    marginBottom: 2,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
   },
   transactionPerson: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
   },
   transactionTime: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
+    color: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+  },
+  transactionAmountContainer: {
+    alignItems: 'flex-end',
   },
   transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.LG,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+  },
+  statusBadge: {
+    paddingHorizontal: APP_CONSTANTS.DESIGN.SPACING.SM,
+    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.XS,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.SMALL,
+  },
+  statusText: {
+    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
+    fontSize: 10,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: APP_CONSTANTS.DESIGN.SPACING.XXL,
+    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
+    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+  },
+  emptyText: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.LG,
+    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
+    marginTop: APP_CONSTANTS.DESIGN.SPACING.MD,
+    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+  },
+  emptySubtext: {
+    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+    color: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+    textAlign: 'center',
   },
 });

@@ -6,21 +6,26 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#6C63FF',
-        tabBarInactiveTintColor: '#666',
+        tabBarActiveTintColor: APP_CONSTANTS.COLORS.PRIMARY,
+        tabBarInactiveTintColor: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
         tabBarStyle: {
-          backgroundColor: '#FAFAFA',
+          backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
           borderTopWidth: 1,
-          borderTopColor: '#e5e5e5',
-          paddingBottom: 5,
-          paddingTop: 5,
+          borderTopColor: APP_CONSTANTS.COLORS.BORDER,
+          paddingBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+          paddingTop: APP_CONSTANTS.DESIGN.SPACING.SM,
           height: 60,
+          ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
+        },
+        tabBarLabelStyle: {
+          fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
+          fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.MEDIUM,
         },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Wallet',
+          title: 'Amafaranga',
           tabBarIcon: ({ size, color }) => (
             <Wallet size={size} color={color} />
           ),
@@ -29,7 +34,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="transfer"
         options={{
-          title: 'Transfer',
+          title: 'Kohereza',
           tabBarIcon: ({ size, color }) => (
             <Send size={size} color={color} />
           ),
@@ -38,7 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Chat',
+          title: 'Ubutumwa',
           tabBarIcon: ({ size, color }) => (
             <MessageCircle size={size} color={color} />
           ),
@@ -47,7 +52,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="bills"
         options={{
-          title: 'Bills',
+          title: 'Fagitire',
           tabBarIcon: ({ size, color }) => (
             <Receipt size={size} color={color} />
           ),
@@ -56,7 +61,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Umwirondoro',
           tabBarIcon: ({ size, color }) => (
             <User size={size} color={color} />
           ),

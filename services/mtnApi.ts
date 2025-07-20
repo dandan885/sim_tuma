@@ -1,7 +1,8 @@
 // MTN Mobile Money API Integration Service
-// Rwanda MTN Mobile Money API Integration
+// SimTuma - Rwanda MTN Mobile Money API Integration
 
 import { Platform } from 'react-native';
+import { APP_CONSTANTS } from '@/constants/AppConstants';
 
 export interface TransactionRequest {
   phoneNumber: string;
@@ -48,16 +49,16 @@ export interface BillPaymentRequest {
 class MTNMobileMoneyAPI {
   private baseUrl = 'https://sandbox.momodeveloper.mtn.com'; // MTN Rwanda API
   private environment = 'sandbox'; // Change to 'live' for production
-  private subscriptionKey = process.env.EXPO_PUBLIC_MTN_RW_SUBSCRIPTION_KEY || 'your_rwanda_subscription_key';
-  private apiUserId = process.env.EXPO_PUBLIC_MTN_RW_API_USER_ID || 'your_rwanda_api_user_id';
-  private apiKey = process.env.EXPO_PUBLIC_MTN_RW_API_KEY || 'your_rwanda_api_key';
+  private subscriptionKey = process.env.EXPO_PUBLIC_MTN_RW_SUBSCRIPTION_KEY || 'simtuma_rwanda_subscription_key';
+  private apiUserId = process.env.EXPO_PUBLIC_MTN_RW_API_USER_ID || 'simtuma_rwanda_api_user_id';
+  private apiKey = process.env.EXPO_PUBLIC_MTN_RW_API_KEY || 'simtuma_rwanda_api_key';
 
   // Check if we should use mock data (for web platform or missing credentials)
   private shouldUseMockData(): boolean {
     return Platform.OS === 'web' || 
-           this.subscriptionKey === 'your_rwanda_subscription_key' ||
-           this.apiUserId === 'your_rwanda_api_user_id' ||
-           this.apiKey === 'your_rwanda_api_key';
+           this.subscriptionKey === 'simtuma_rwanda_subscription_key' ||
+           this.apiUserId === 'simtuma_rwanda_api_user_id' ||
+           this.apiKey === 'simtuma_rwanda_api_key';
   }
 
   // Error handling wrapper
@@ -107,7 +108,7 @@ class MTNMobileMoneyAPI {
         financialTransactionId: `mock_${request.externalId}`,
         externalId: request.externalId,
         amount: request.amount.toString(),
-        currency: request.currency,
+        currency: APP_CONSTANTS.CURRENCY,
         payer: {
           partyIdType: 'MSISDN',
           partyId: request.phoneNumber,
@@ -174,13 +175,13 @@ class MTNMobileMoneyAPI {
         financialTransactionId: transactionId,
         externalId: transactionId,
         amount: '50000',
-        currency: 'RWF',
+        currency: APP_CONSTANTS.CURRENCY,
         payer: {
           partyIdType: 'MSISDN',
-          partyId: '250788123456',
+          partyId: `${APP_CONSTANTS.COUNTRY_CODE.replace('+', '')}788123456`,
         },
-        payerMessage: 'Payment completed',
-        payeeNote: 'Transaction successful',
+        payerMessage: 'Kwishyura byarangiye (Payment completed)',
+        payeeNote: 'Igikorwa cyarangiye (Transaction successful)',
         status: 'SUCCESSFUL',
       };
     }
@@ -212,7 +213,7 @@ class MTNMobileMoneyAPI {
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
       return {
         availableBalance: '125450.75',
-        currency: 'RWF',
+        currency: APP_CONSTANTS.CURRENCY,
       };
     }
 
@@ -233,7 +234,7 @@ class MTNMobileMoneyAPI {
         console.warn('Balance API failed, returning mock data');
         return {
           availableBalance: '125450.75',
-          currency: 'RWF',
+          currency: APP_CONSTANTS.CURRENCY,
         };
       }
 
@@ -250,9 +251,9 @@ class MTNMobileMoneyAPI {
           id: 'txn_001',
           type: 'received',
           amount: 50000,
-          currency: 'RWF',
-          description: 'Payment received',
-          sender: 'Jean Claude',
+          currency: APP_CONSTANTS.CURRENCY,
+          description: 'Amafaranga yakiriye (Payment received)',
+          sender: 'Jean Claude Uwimana',
           timestamp: new Date('2024-01-15T10:30:00'),
           status: 'completed',
           reference: 'REF001',
@@ -261,9 +262,9 @@ class MTNMobileMoneyAPI {
           id: 'txn_002',
           type: 'sent',
           amount: 25000,
-          currency: 'RWF',
-          description: 'Money transfer',
-          recipient: 'Marie Uwimana',
+          currency: APP_CONSTANTS.CURRENCY,
+          description: 'Kohereza amafaranga (Money transfer)',
+          recipient: 'Marie Mukamana',
           timestamp: new Date('2024-01-14T15:20:00'),
           status: 'completed',
           reference: 'REF002',
@@ -272,8 +273,8 @@ class MTNMobileMoneyAPI {
           id: 'txn_003',
           type: 'bill_payment',
           amount: 15000,
-          currency: 'RWF',
-          description: 'EUCL electricity bill',
+          currency: APP_CONSTANTS.CURRENCY,
+          description: 'Fagitire ya EUCL (EUCL electricity bill)',
           timestamp: new Date('2024-01-13T09:15:00'),
           status: 'completed',
           reference: 'REF003',
@@ -359,10 +360,10 @@ class MTNMobileMoneyAPI {
     return this.handleApiCall(async () => {
       // In real implementation, this would call MTN's number validation API
       // For now, we'll use local validation
-      const rwandaMTNPrefixes = ['788', '789', '780', '781', '782', '783'];
+      const rwandaMTNPrefixes = APP_CONSTANTS.MTN_PREFIXES;
       const cleaned = phoneNumber.replace(/\D/g, '');
       
-      if (cleaned.length !== 12 || !cleaned.startsWith('250')) {
+      if (cleaned.length !== 12 || !cleaned.startsWith(APP_CONSTANTS.COUNTRY_CODE.replace('+', ''))) {
         return false;
       }
       
