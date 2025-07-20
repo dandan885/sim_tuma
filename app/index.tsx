@@ -5,24 +5,27 @@ import {
   StyleSheet,
   SafeAreaView,
   Animated,
-  Dimensions,
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Smartphone, Shield, Send, CreditCard, MapPin } from 'lucide-react-native';
+import { ScrollContainer } from '@/components/ui/ScrollContainer';
 import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
 import { Button } from '@/components/ui/Button';
-import { APP_CONSTANTS } from '@/constants/AppConstants';
-
-const { width, height } = Dimensions.get('window');
+import { BentoGrid, BentoItem } from '@/components/ui/BentoGrid';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function WelcomeScreen() {
+  const { theme, isDark } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
   const [logoScale] = useState(new Animated.Value(0.8));
 
   useEffect(() => {
-    StatusBar.setBarStyle('dark-content');
+    StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
     
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -33,303 +36,331 @@ export default function WelcomeScreen() {
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
-        ...APP_CONSTANTS.SPRING_CONFIG,
+        tension: 100,
+        friction: 8,
       }),
       Animated.spring(logoScale, {
         toValue: 1,
         useNativeDriver: true,
-        ...APP_CONSTANTS.SPRING_CONFIG,
+        tension: 100,
+        friction: 8,
       }),
     ]).start();
-  }, []);
+  }, [isDark]);
 
   const features = [
     {
       icon: Send,
       title: 'Kohereza Amafaranga',
       titleEn: 'Send Money',
-      description: 'Ohereza amafaranga byihuse hamwe na MTN Mobile Money',
-      descriptionEn: 'Transfer money instantly with MTN Mobile Money',
-      color: APP_CONSTANTS.COLORS.PRIMARY,
+      description: 'Ohereza amafaranga byihuse hamwe na MTN Mobile Money Rwanda',
+      descriptionEn: 'Transfer money instantly with MTN Mobile Money Rwanda',
+      color: theme.colors.primary,
+      span: 1,
     },
     {
       icon: CreditCard,
       title: 'Kwishyura Fagitire',
       titleEn: 'Pay Bills',
-      description: 'Ishyura fagitire zawe zose ukurikije telefoni yawe',
-      descriptionEn: 'Pay all your bills directly from your phone',
-      color: APP_CONSTANTS.COLORS.SECONDARY,
+      description: 'Ishyura fagitire zawe zose ukurikije telefoni yawe - EUCL, WASAC, na MTN Rwanda',
+      descriptionEn: 'Pay all your bills directly from your phone - EUCL, WASAC, and MTN Rwanda',
+      color: theme.colors.secondary,
+      span: 1,
     },
     {
       icon: Shield,
-      title: 'Umutekano',
-      titleEn: 'Security',
-      description: 'Umutekano wa banki hamwe na PIN na biometric',
-      descriptionEn: 'Bank-level security with PIN and biometric protection',
-      color: APP_CONSTANTS.COLORS.ACCENT,
+      title: 'Umutekano wa Banki',
+      titleEn: 'Bank-Level Security',
+      description: 'Umutekano mukomeye hamwe na PIN, biometric, na encryption ya banki',
+      descriptionEn: 'Advanced security with PIN, biometric, and bank-grade encryption',
+      color: theme.colors.accent,
+      span: 2,
     },
     {
       icon: Smartphone,
-      title: 'Byoroshye',
-      titleEn: 'Easy to Use',
-      description: 'Porogaramu yoroshye kandi yumvikana kuri bose',
-      descriptionEn: 'Simple and intuitive interface for everyone',
-      color: APP_CONSTANTS.COLORS.INFO,
+      title: 'Byoroshye Cyane',
+      titleEn: 'Super Easy',
+      description: 'Porogaramu yoroshye kandi yumvikana kuri bose mu Rwanda',
+      descriptionEn: 'Simple and intuitive interface for everyone in Rwanda',
+      color: theme.colors.info,
+      span: 1,
     },
   ];
 
-  const isTablet = width >= APP_CONSTANTS.BREAKPOINTS.TABLET;
+  const styles = createStyles(theme, isMobile, isTablet);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={APP_CONSTANTS.COLORS.BACKGROUND} />
+      <StatusBar 
+        barStyle={isDark ? 'light-content' : 'dark-content'} 
+        backgroundColor={theme.colors.background} 
+      />
       
-      <ResponsiveContainer style={styles.content} maxWidth={600}>
-        {/* Header */}
-        <Animated.View 
-          style={[
-            styles.header,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}>
+      <ScrollContainer
+        contentContainerStyle={styles.scrollContent}
+        enableBounce={true}>
+        
+        <ResponsiveContainer style={styles.content} maxWidth={800}>
+          {/* Theme Toggle */}
+          <View style={styles.themeToggleContainer}>
+            <ThemeToggle />
+          </View>
+
+          {/* Header */}
           <Animated.View 
             style={[
-              styles.logoContainer,
-              { transform: [{ scale: logoScale }] }
+              styles.header,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
             ]}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>ST</Text>
-            </View>
-            <View style={styles.rwandaFlag}>
-              <View style={[styles.flagStripe, { backgroundColor: '#00A1DE' }]} />
-              <View style={[styles.flagStripe, { backgroundColor: '#FAD201' }]} />
-              <View style={[styles.flagStripe, { backgroundColor: '#00A651' }]} />
+            <Animated.View 
+              style={[
+                styles.logoContainer,
+                { transform: [{ scale: logoScale }] }
+              ]}>
+              <View style={[styles.logo, { backgroundColor: theme.colors.primary }]}>
+                <Text style={[styles.logoText, { color: theme.colors.textInverse }]}>ST</Text>
+              </View>
+              <View style={styles.rwandaFlag}>
+                <View style={[styles.flagStripe, { backgroundColor: '#00A1DE' }]} />
+                <View style={[styles.flagStripe, { backgroundColor: '#FAD201' }]} />
+                <View style={[styles.flagStripe, { backgroundColor: '#00A651' }]} />
+              </View>
+            </Animated.View>
+            
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+              SimTuma
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+              Inzira yoroshye yo kohereza amafaranga, kwishyura fagitire no gucunga amafaranga yawe mu Rwanda
+            </Text>
+            <Text style={[styles.subtitleEn, { color: theme.colors.textTertiary }]}>
+              The easiest way to send money, pay bills, and manage your finances in Rwanda
+            </Text>
+            
+            <View style={[styles.locationBadge, { 
+              backgroundColor: `${theme.colors.primary}15`,
+              borderColor: `${theme.colors.primary}30`,
+            }]}>
+              <MapPin size={16} color={theme.colors.primary} />
+              <Text style={[styles.locationText, { color: theme.colors.primary }]}>
+                Rwanda
+              </Text>
             </View>
           </Animated.View>
-          
-          <Text style={styles.title}>{APP_CONSTANTS.APP_NAME}</Text>
-          <Text style={styles.subtitle}>
-            Inzira yoroshye yo kohereza amafaranga, kwishyura fagitire no gucunga amafaranga yawe mu Rwanda
-          </Text>
-          <Text style={styles.subtitleEn}>
-            The easiest way to send money, pay bills, and manage your finances in Rwanda
-          </Text>
-          
-          <View style={styles.locationBadge}>
-            <MapPin size={16} color={APP_CONSTANTS.COLORS.PRIMARY} />
-            <Text style={styles.locationText}>Rwanda</Text>
-          </View>
-        </Animated.View>
 
-        {/* Features */}
-        <Animated.View 
-          style={[
-            styles.featuresContainer,
-            { opacity: fadeAnim },
-          ]}>
-          {features.map((feature, index) => (
-            <Animated.View
-              key={index}
-              style={[
-                styles.featureCard,
-                isTablet && styles.featureCardTablet,
-                {
-                  opacity: fadeAnim,
-                  transform: [
-                    {
-                      translateY: slideAnim.interpolate({
-                        inputRange: [0, 50],
-                        outputRange: [0, 50 + index * 10],
-                      }),
-                    },
-                  ],
-                },
-              ]}>
-              <View style={[styles.featureIcon, { backgroundColor: `${feature.color}20` }]}>
-                <feature.icon size={isTablet ? 28 : 24} color={feature.color} />
-              </View>
-              <Text style={styles.featureTitle}>{feature.title}</Text>
-              <Text style={styles.featureTitleEn}>{feature.titleEn}</Text>
-              <Text style={styles.featureDescription}>{feature.description}</Text>
-            </Animated.View>
-          ))}
-        </Animated.View>
+          {/* Features Bento Grid */}
+          <Animated.View 
+            style={[
+              styles.featuresContainer,
+              { opacity: fadeAnim },
+            ]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+              Ibikoresha (Features)
+            </Text>
+            
+            <BentoGrid spacing={theme.spacing.md}>
+              {features.map((feature, index) => (
+                <BentoItem key={index} span={feature.span as 1 | 2}>
+                  <Animated.View
+                    style={{
+                      opacity: fadeAnim,
+                      transform: [
+                        {
+                          translateY: slideAnim.interpolate({
+                            inputRange: [0, 50],
+                            outputRange: [0, 50 + index * 10],
+                          }),
+                        },
+                      ],
+                    }}>
+                    <View style={[styles.featureIcon, { backgroundColor: `${feature.color}20` }]}>
+                      <feature.icon size={isMobile ? 24 : 28} color={feature.color} />
+                    </View>
+                    <Text style={[styles.featureTitle, { color: theme.colors.textPrimary }]}>
+                      {feature.title}
+                    </Text>
+                    <Text style={[styles.featureTitleEn, { color: theme.colors.textSecondary }]}>
+                      {feature.titleEn}
+                    </Text>
+                    <Text style={[styles.featureDescription, { color: theme.colors.textTertiary }]}>
+                      {feature.description}
+                    </Text>
+                  </Animated.View>
+                </BentoItem>
+              ))}
+            </BentoGrid>
+          </Animated.View>
 
-        {/* Action Buttons */}
-        <Animated.View 
-          style={[
-            styles.buttonContainer,
-            { opacity: fadeAnim },
-          ]}>
-          <Button
-            title="Tangira (Get Started)"
-            onPress={() => router.push('/auth/phone-verification')}
-            variant="primary"
-            size={isTablet ? 'large' : 'medium'}
-            fullWidth
-            style={styles.primaryButton}
-          />
-          
-          <Button
-            title="Mfite Konti (I Have Account)"
-            onPress={() => router.push('/(tabs)')}
-            variant="outline"
-            size={isTablet ? 'large' : 'medium'}
-            fullWidth
-            style={styles.secondaryButton}
-          />
-        </Animated.View>
-      </ResponsiveContainer>
+          {/* Action Buttons */}
+          <Animated.View 
+            style={[
+              styles.buttonContainer,
+              { opacity: fadeAnim },
+            ]}>
+            <Button
+              title="Tangira (Get Started)"
+              onPress={() => router.push('/auth/phone-verification')}
+              variant="primary"
+              size={isMobile ? 'medium' : 'large'}
+              fullWidth
+              style={styles.primaryButton}
+            />
+            
+            <Button
+              title="Mfite Konti (I Have Account)"
+              onPress={() => router.push('/(tabs)')}
+              variant="outline"
+              size={isMobile ? 'medium' : 'large'}
+              fullWidth
+              style={styles.secondaryButton}
+            />
+          </Animated.View>
+        </ResponsiveContainer>
+      </ScrollContainer>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: APP_CONSTANTS.COLORS.BACKGROUND,
+    backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: '100%',
   },
   content: {
     flex: 1,
-    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.LG,
+    paddingVertical: theme.spacing.lg,
+  },
+  themeToggleContainer: {
+    alignItems: 'flex-end',
+    marginBottom: theme.spacing.md,
   },
   header: {
     alignItems: 'center',
-    marginTop: APP_CONSTANTS.DESIGN.SPACING.XL,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.LG,
+    marginBottom: theme.spacing.lg,
     position: 'relative',
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: APP_CONSTANTS.COLORS.PRIMARY,
+    width: isMobile ? 80 : 100,
+    height: isMobile ? 80 : 100,
+    borderRadius: isMobile ? 40 : 50,
     justifyContent: 'center',
     alignItems: 'center',
-    ...APP_CONSTANTS.DESIGN.SHADOWS.LARGE,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   logoText: {
-    fontSize: 28,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
+    fontSize: isMobile ? 28 : 36,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   rwandaFlag: {
     position: 'absolute',
     bottom: -5,
     right: -5,
-    width: 24,
-    height: 18,
+    width: isMobile ? 24 : 30,
+    height: isMobile ? 18 : 22,
     borderRadius: 4,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: APP_CONSTANTS.COLORS.BORDER,
+    borderColor: theme.colors.border,
   },
   flagStripe: {
     flex: 1,
     width: '100%',
   },
   title: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XXXL,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
+    fontSize: isMobile ? theme.typography.fontSizes.xxxl : 40,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.md,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
     textAlign: 'center',
-    lineHeight: APP_CONSTANTS.TYPOGRAPHY.LINE_HEIGHTS.RELAXED * APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+    lineHeight: theme.typography.lineHeights.relaxed * (isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg),
+    marginBottom: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
   },
   subtitleEn: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    color: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
     textAlign: 'center',
-    lineHeight: APP_CONSTANTS.TYPOGRAPHY.LINE_HEIGHTS.NORMAL * APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
+    lineHeight: theme.typography.lineHeights.normal * (isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base),
     fontStyle: 'italic',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
+    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
   },
   locationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `${APP_CONSTANTS.COLORS.PRIMARY}15`,
-    paddingHorizontal: APP_CONSTANTS.DESIGN.SPACING.MD,
-    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.SM,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.LARGE,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.large,
     borderWidth: 1,
-    borderColor: `${APP_CONSTANTS.COLORS.PRIMARY}30`,
   },
   locationText: {
-    marginLeft: APP_CONSTANTS.DESIGN.SPACING.XS,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
-    color: APP_CONSTANTS.COLORS.PRIMARY,
+    marginLeft: theme.spacing.xs,
+    fontSize: theme.typography.fontSizes.sm,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   featuresContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+    marginBottom: theme.spacing.xl,
   },
-  featureCard: {
-    width: '48%',
-    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
-    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.LARGE,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
-    alignItems: 'center',
-    ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
-    borderWidth: 1,
-    borderColor: APP_CONSTANTS.COLORS.BORDER_LIGHT,
-  },
-  featureCardTablet: {
-    width: '48%',
-    padding: APP_CONSTANTS.DESIGN.SPACING.XL,
+  sectionTitle: {
+    fontSize: isMobile ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.lg,
+    textAlign: 'center',
   },
   featureIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: isMobile ? 56 : 64,
+    height: isMobile ? 56 : 64,
+    borderRadius: isMobile ? 28 : 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
+    marginBottom: theme.spacing.md,
+    alignSelf: 'center',
   },
   featureTitle: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.xs,
     textAlign: 'center',
   },
   featureTitleEn: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.MEDIUM,
-    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.medium,
+    marginBottom: theme.spacing.sm,
     textAlign: 'center',
     fontStyle: 'italic',
   },
   featureDescription: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
-    color: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
     textAlign: 'center',
-    lineHeight: APP_CONSTANTS.TYPOGRAPHY.LINE_HEIGHTS.NORMAL * APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
+    lineHeight: theme.typography.lineHeights.normal * (isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm),
   },
   buttonContainer: {
     marginTop: 'auto',
-    gap: APP_CONSTANTS.DESIGN.SPACING.MD,
+    gap: theme.spacing.md,
+    paddingTop: theme.spacing.xl,
   },
   primaryButton: {
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+    marginBottom: theme.spacing.sm,
   },
   secondaryButton: {
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.LG,
+    marginBottom: theme.spacing.lg,
   },
 });

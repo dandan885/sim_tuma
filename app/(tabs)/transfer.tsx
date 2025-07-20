@@ -6,17 +6,23 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   Alert,
   Keyboard,
 } from 'react-native';
 import { DollarSign, Send, Contact as Contacts, QrCode, Clock } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { ScrollContainer } from '@/components/ui/ScrollContainer';
 import { PhoneInput } from '@/components/PhoneInput';
 import { AnimatedButton } from '@/components/AnimatedButton';
-import { validateMTNNumber, formatCurrency, APP_CONSTANTS } from '@/constants/AppConstants';
+import { validateMTNNumber, formatCurrency } from '@/constants/AppConstants';
 import { mtnAPI } from '@/services/mtnApi';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useResponsive } from '@/hooks/useResponsive';
+import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
 
 export default function TransferScreen() {
+  const { theme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -37,17 +43,17 @@ export default function TransferScreen() {
     const newErrors: {[key: string]: string} = {};
     
     if (!phoneNumber) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.phone = 'Nomero ya telefoni ikenewe (Phone number is required)';
     } else if (!validateMTNNumber(phoneNumber)) {
-      newErrors.phone = APP_CONSTANTS.ERRORS.INVALID_PHONE;
+      newErrors.phone = 'Nomero ya telefoni ntabwo ari yo (Invalid MTN Number)';
     }
     
     if (!amount) {
-      newErrors.amount = 'Amount is required';
+      newErrors.amount = 'Amafaranga akenewe (Amount is required)';
     } else if (parseFloat(amount) <= 0) {
-      newErrors.amount = APP_CONSTANTS.ERRORS.INVALID_AMOUNT;
+      newErrors.amount = 'Amafaranga yanditswe ntabwo ari yo (Invalid amount entered)';
     } else if (parseFloat(amount) < 100) {
-      newErrors.amount = 'Minimum amount is RWF 100';
+      newErrors.amount = 'Amafaranga make ni RWF 100 (Minimum amount is RWF 100)';
     }
     
     setErrors(newErrors);
@@ -60,34 +66,34 @@ export default function TransferScreen() {
     }
     
     const formattedAmount = parseFloat(amount);
-    const fullPhoneNumber = `${APP_CONSTANTS.COUNTRY_CODE}${phoneNumber}`;
+    const fullPhoneNumber = `+250${phoneNumber}`;
     
     Alert.alert(
-      'Confirm Transfer',
-      `Send ${formatCurrency(formattedAmount)} to ${fullPhoneNumber}?`,
+      'Emeza Kohereza (Confirm Transfer)',
+      `Ohereza ${formatCurrency(formattedAmount)} kuri ${fullPhoneNumber}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hagarika (Cancel)', style: 'cancel' },
         {
-          text: 'Send',
+          text: 'Ohereza (Send)',
           onPress: async () => {
             setIsLoading(true);
             try {
               const response = await mtnAPI.requestToPay({
                 phoneNumber: fullPhoneNumber,
                 amount: formattedAmount,
-                currency: APP_CONSTANTS.CURRENCY,
+                currency: 'RWF',
                 externalId: `transfer_${Date.now()}`,
-                payerMessage: note || 'Money transfer',
-                payeeNote: note || 'Money transfer',
+                payerMessage: note || 'Kohereza amafaranga (Money transfer)',
+                payeeNote: note || 'Kohereza amafaranga (Money transfer)',
               });
               
-              Alert.alert('Success', APP_CONSTANTS.SUCCESS.MONEY_SENT);
+              Alert.alert('Byarangiye (Success)', 'Amafaranga yoherejwe neza (Money sent successfully)');
               setPhoneNumber('');
               setAmount('');
               setNote('');
               setErrors({});
             } catch (error) {
-              Alert.alert('Error', APP_CONSTANTS.ERRORS.API_ERROR);
+              Alert.alert('Ikibazo (Error)', 'Serivisi ntabwo irakora neza (Service temporarily unavailable)');
             } finally {
               setIsLoading(false);
             }
@@ -103,289 +109,334 @@ export default function TransferScreen() {
     Keyboard.dismiss();
   };
 
+  const styles = createStyles(theme, isMobile, isTablet);
+
   return (
-    <SafeAreaView style={styles.container} pointerEvents={isLoading ? 'none' : 'auto'}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Send Money</Text>
-          <Text style={styles.subtitle}>Transfer money with MTN MoMo Rwanda</Text>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickAction}>
-            <Contacts size={24} color="#0066CC" />
-            <Text style={styles.quickActionText}>Contacts</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction}>
-            <QrCode size={24} color="#0066CC" />
-            <Text style={styles.quickActionText}>Scan QR</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.quickAction}
-            onPress={() => setIsScheduled(!isScheduled)}>
-            <Clock size={24} color={isScheduled ? '#FFCC00' : '#0066CC'} />
-            <Text style={[styles.quickActionText, isScheduled && { color: '#FFCC00' }]}>
-              Schedule
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollContainer
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}>
+        
+        <ResponsiveContainer maxWidth={600}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+              Kohereza Amafaranga (Send Money)
             </Text>
-          </TouchableOpacity>
-        </View>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+              Ohereza amafaranga hamwe na MTN MoMo Rwanda
+            </Text>
+          </View>
 
-        {/* Transfer Form */}
-        <View style={styles.formSection}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Phone Number</Text>
-            <PhoneInput
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              onValidation={setIsValidPhone}
-              error={errors.phone}
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={[styles.quickAction, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <Contacts size={24} color={theme.colors.primary} />
+              <Text style={[styles.quickActionText, { color: theme.colors.primary }]}>
+                Abo mubana (Contacts)
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.quickAction, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <QrCode size={24} color={theme.colors.primary} />
+              <Text style={[styles.quickActionText, { color: theme.colors.primary }]}>
+                Scan QR
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.quickAction, 
+                { 
+                  backgroundColor: isScheduled ? `${theme.colors.accent}20` : theme.colors.surface,
+                  borderColor: isScheduled ? theme.colors.accent : theme.colors.border,
+                }
+              ]}
+              onPress={() => setIsScheduled(!isScheduled)}>
+              <Clock size={24} color={isScheduled ? theme.colors.accent : theme.colors.primary} />
+              <Text style={[
+                styles.quickActionText, 
+                { color: isScheduled ? theme.colors.accent : theme.colors.primary }
+              ]}>
+                Gahunda (Schedule)
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Transfer Form */}
+          <View style={[styles.formSection, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.colors.textPrimary }]}>
+                Nomero ya Telefoni (Phone Number)
+              </Text>
+              <PhoneInput
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                onValidation={setIsValidPhone}
+                error={errors.phone}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.colors.textPrimary }]}>
+                Amafaranga (Amount) (RWF)
+              </Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
+                <DollarSign size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: theme.colors.textPrimary }]}
+                  placeholder="5000"
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="numeric"
+                  placeholderTextColor={theme.colors.textTertiary}
+                />
+              </View>
+              {errors.amount && (
+                <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.amount}</Text>
+              )}
+            </View>
+
+            {/* Quick Amount Buttons */}
+            <View style={styles.quickAmounts}>
+              {quickAmounts.map((quickAmount) => (
+                <TouchableOpacity
+                  key={quickAmount}
+                  style={[
+                    styles.quickAmountButton,
+                    { 
+                      backgroundColor: `${theme.colors.primary}20`,
+                      borderColor: theme.colors.primary,
+                    }
+                  ]}
+                  onPress={() => setAmount(quickAmount.toString())}>
+                  <Text style={[styles.quickAmountText, { color: theme.colors.primary }]}>
+                    {formatCurrency(quickAmount)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.colors.textPrimary }]}>
+                Ubutumwa (Note) (Optional)
+              </Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  styles.noteInput,
+                  { 
+                    backgroundColor: theme.colors.surfaceVariant,
+                    borderColor: theme.colors.border,
+                    color: theme.colors.textPrimary,
+                  }
+                ]}
+                placeholder="Andika ubutumwa... (Add a note...)"
+                value={note}
+                onChangeText={setNote}
+                multiline
+                placeholderTextColor={theme.colors.textTertiary}
+              />
+            </View>
+
+            <AnimatedButton
+              title={isScheduled ? 'Gahunda Kohereza (Schedule Transfer)' : 'Ohereza Amafaranga (Send Money)'}
+              onPress={handleSendMoney}
+              disabled={!isValidPhone || !amount || isLoading}
+              loading={isLoading}
+              style={styles.sendButton}
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Amount ({APP_CONSTANTS.CURRENCY})</Text>
-            <View style={styles.inputContainer}>
-              <DollarSign size={20} color="#666" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="5000"
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="numeric"
-                placeholderTextColor="#999"
-              />
-            </View>
-            {errors.amount && (
-              <Text style={styles.errorText}>{errors.amount}</Text>
-            )}
-          </View>
-
-          {/* Quick Amount Buttons */}
-          <View style={styles.quickAmounts}>
-            {quickAmounts.map((quickAmount) => (
+          {/* Recent Contacts */}
+          <View style={styles.contactsSection}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+              Abo Mubana Bya Vuba (Recent Contacts)
+            </Text>
+            {recentContacts.map((contact, index) => (
               <TouchableOpacity
-                key={quickAmount}
-                style={styles.quickAmountButton}
-                onPress={() => setAmount(quickAmount.toString())}>
-                <Text style={styles.quickAmountText}>
-                  {formatCurrency(quickAmount)}
-                </Text>
+                key={index}
+                style={[styles.contactItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                onPress={() => handleContactSelect(contact)}>
+                <View style={[styles.contactAvatar, { backgroundColor: theme.colors.primary }]}>
+                  <Text style={[styles.contactAvatarText, { color: theme.colors.textInverse }]}>
+                    {contact.avatar}
+                  </Text>
+                </View>
+                <View style={styles.contactInfo}>
+                  <Text style={[styles.contactName, { color: theme.colors.textPrimary }]}>
+                    {contact.name}
+                  </Text>
+                  <Text style={[styles.contactPhone, { color: theme.colors.textSecondary }]}>
+                    +250 {contact.phone}
+                  </Text>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Note (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.noteInput]}
-              placeholder="Add a note..."
-              value={note}
-              onChangeText={setNote}
-              multiline
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <AnimatedButton
-            title={isScheduled ? 'Schedule Transfer' : 'Send Money'}
-            onPress={handleSendMoney}
-            disabled={!isValidPhone || !amount || isLoading}
-            loading={isLoading}
-            style={styles.sendButton}
-          />
-        </View>
-
-        {/* Recent Contacts */}
-        <View style={styles.contactsSection}>
-          <Text style={styles.sectionTitle}>Recent Contacts</Text>
-          {recentContacts.map((contact, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.contactItem}
-              onPress={() => handleContactSelect(contact)}>
-              <View style={styles.contactAvatar}>
-                <Text style={styles.contactAvatarText}>{contact.avatar}</Text>
-              </View>
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>{contact.name}</Text>
-                <Text style={styles.contactPhone}>
-                  {APP_CONSTANTS.COUNTRY_CODE} {contact.phone}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+        </ResponsiveContainer>
+      </ScrollContainer>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: theme.spacing.xl,
   },
   header: {
-    padding: 20,
-    paddingTop: 40,
+    paddingVertical: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
-    marginBottom: 4,
+    fontSize: isMobile ? theme.typography.fontSizes.xxl : theme.typography.fontSizes.xxxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
   },
   quickActions: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    marginBottom: 30,
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.xl,
+    gap: theme.spacing.sm,
   },
   quickAction: {
+    flex: 1,
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FAFAFA',
-    borderRadius: 12,
-    shadowColor: '#000',
+    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+    borderRadius: theme.borderRadius.medium,
+    borderWidth: 1,
+    shadowColor: theme.colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    minWidth: 80,
+    minHeight: 80,
+    justifyContent: 'center',
   },
   quickActionText: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6C63FF',
+    marginTop: theme.spacing.sm,
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
+    fontWeight: theme.typography.fontWeights.semibold,
+    textAlign: 'center',
   },
   formSection: {
-    backgroundColor: '#FAFAFA',
-    marginHorizontal: 20,
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    padding: isMobile ? theme.spacing.lg : theme.spacing.xl,
+    borderRadius: theme.borderRadius.large,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
+    borderWidth: 1,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: theme.spacing.lg,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2F2F2F',
-    marginBottom: 8,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginBottom: theme.spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e5e5e5',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FAFAFA',
+    borderRadius: theme.borderRadius.medium,
+    paddingHorizontal: theme.spacing.md,
+    minHeight: 50,
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: theme.spacing.md,
   },
   input: {
     flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    paddingVertical: theme.spacing.md,
   },
   noteInput: {
-    height: 80,
+    minHeight: 80,
     textAlignVertical: 'top',
-    paddingTop: 12,
+    paddingTop: theme.spacing.md,
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.medium,
+    paddingHorizontal: theme.spacing.md,
   },
   quickAmounts: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.sm,
   },
   quickAmountButton: {
-    backgroundColor: '#6C63FF20',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.large,
     borderWidth: 1,
-    borderColor: '#6C63FF',
-    marginBottom: 8,
-    width: '48%',
+    width: isMobile ? '48%' : '23%',
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   quickAmountText: {
-    color: '#6C63FF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   errorText: {
-    color: '#EF4444',
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: theme.typography.fontSizes.sm,
+    marginTop: theme.spacing.xs,
   },
   sendButton: {
-    marginTop: 10,
+    marginTop: theme.spacing.md,
   },
   contactsSection: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
-    marginBottom: 16,
+    fontSize: isMobile ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.md,
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+    borderRadius: theme.borderRadius.medium,
+    marginBottom: theme.spacing.sm,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
+    minHeight: 70,
   },
   contactAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#6C63FF',
+    width: isMobile ? 50 : 60,
+    height: isMobile ? 50 : 60,
+    borderRadius: isMobile ? 25 : 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: theme.spacing.md,
   },
   contactAvatarText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: isMobile ? theme.typography.fontSizes.lg : theme.typography.fontSizes.xl,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   contactInfo: {
     flex: 1,
   },
   contactName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2F2F2F',
-    marginBottom: 2,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginBottom: theme.spacing.xs,
   },
   contactPhone: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
   },
 });

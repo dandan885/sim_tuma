@@ -8,14 +8,17 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Animated,
-  Dimensions,
 } from 'react-native';
-import { Send, Search, DollarSign, Circle, MoveVertical as MoreVertical } from 'lucide-react-native';
+import { Send, Search, DollarSign, Circle, ArrowLeft } from 'lucide-react-native';
 import { formatCurrency } from '@/constants/AppConstants';
-
-const { width } = Dimensions.get('window');
+import { ScrollContainer } from '@/components/ui/ScrollContainer';
+import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ChatScreen() {
+  const { theme } = useTheme();
+  const { isMobile, width } = useResponsive();
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState(null);
@@ -24,7 +27,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: 'Muraho! Can you send me the money for lunch?',
+      text: 'Muraho! Urashobora kunkohereza amafaranga yo kurya? (Hello! Can you send me money for lunch?)',
       sender: 'Jean Claude',
       timestamp: new Date('2024-01-15T10:30:00'),
       isMe: false,
@@ -32,7 +35,7 @@ export default function ChatScreen() {
     },
     {
       id: 2,
-      text: 'Ego! How much was it?',
+      text: 'Ego! Ni angahe? (Sure! How much?)',
       sender: 'Me',
       timestamp: new Date('2024-01-15T10:32:00'),
       isMe: true,
@@ -40,7 +43,7 @@ export default function ChatScreen() {
     },
     {
       id: 3,
-      text: 'RWF 5,000. Murakoze!',
+      text: 'RWF 5,000. Murakoze! (RWF 5,000. Thank you!)',
       sender: 'Jean Claude',
       timestamp: new Date('2024-01-15T10:33:00'),
       isMe: false,
@@ -48,7 +51,7 @@ export default function ChatScreen() {
     },
     {
       id: 4,
-      text: 'Money sent! 💰',
+      text: 'Amafaranga yoherejwe! 💰 (Money sent! 💰)',
       sender: 'Me',
       timestamp: new Date('2024-01-15T10:35:00'),
       isMe: true,
@@ -63,7 +66,7 @@ export default function ChatScreen() {
       id: 1, 
       name: 'Jean Claude', 
       avatar: 'JC', 
-      lastMessage: 'Money sent! 💰', 
+      lastMessage: 'Amafaranga yoherejwe! 💰', 
       online: true,
       lastSeen: new Date(),
       streak: 5,
@@ -73,7 +76,7 @@ export default function ChatScreen() {
       id: 2, 
       name: 'Marie Uwimana', 
       avatar: 'MU', 
-      lastMessage: 'Murakoze for the payment', 
+      lastMessage: 'Murakoze kubw\'amafaranga (Thanks for the payment)', 
       online: false,
       lastSeen: new Date(Date.now() - 30 * 60 * 1000),
       streak: 12,
@@ -83,7 +86,7 @@ export default function ChatScreen() {
       id: 3, 
       name: 'Patrick Nkurunziza', 
       avatar: 'PN', 
-      lastMessage: 'See you tomorrow', 
+      lastMessage: 'Tubonane ejo (See you tomorrow)', 
       online: true,
       lastSeen: new Date(),
       streak: 3,
@@ -93,7 +96,7 @@ export default function ChatScreen() {
       id: 4, 
       name: 'Grace Mukamana', 
       avatar: 'GM', 
-      lastMessage: 'Can you pay the bill?', 
+      lastMessage: 'Urashobora kwishyura fagitire? (Can you pay the bill?)', 
       online: false,
       lastSeen: new Date(Date.now() - 2 * 60 * 60 * 1000),
       streak: 8,
@@ -135,7 +138,7 @@ export default function ChatScreen() {
   const sendMoney = () => {
     const paymentMessage = {
       id: messages.length + 1,
-      text: 'Payment request sent',
+      text: 'Gusaba kwishyura byoherejwe (Payment request sent)',
       sender: 'Me',
       timestamp: new Date(),
       isMe: true,
@@ -160,9 +163,9 @@ export default function ChatScreen() {
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
+    if (minutes < 1) return 'Ubu (Just now)';
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
     return date.toLocaleDateString();
   };
 
@@ -174,64 +177,77 @@ export default function ChatScreen() {
     setSelectedChat(null);
   };
 
-  const renderMessage = ({ item }) => (
+  const styles = createStyles(theme, isMobile, width);
+
+  const renderMessage = ({ item }: { item: any }) => (
     <View style={[styles.messageContainer, item.isMe && styles.myMessage]}>
       {!item.isMe && (
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{item.avatar}</Text>
+        <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary }]}>
+          <Text style={[styles.avatarText, { color: theme.colors.textInverse }]}>{item.avatar}</Text>
         </View>
       )}
-      <View style={[styles.messageBubble, item.isMe && styles.myMessageBubble]}>
+      <View style={[
+        styles.messageBubble, 
+        { backgroundColor: item.isMe ? theme.colors.primary : theme.colors.surface },
+        { borderColor: theme.colors.border }
+      ]}>
         {item.isPayment && (
-          <View style={styles.paymentIndicator}>
-            <DollarSign size={16} color="#10B981" />
-            <Text style={styles.paymentAmount}>
+          <View style={[styles.paymentIndicator, { backgroundColor: `${theme.colors.secondary}20` }]}>
+            <DollarSign size={16} color={theme.colors.secondary} />
+            <Text style={[styles.paymentAmount, { color: theme.colors.secondary }]}>
               {formatCurrency(item.amount)}
             </Text>
           </View>
         )}
-        <Text style={[styles.messageText, item.isMe && styles.myMessageText]}>
+        <Text style={[
+          styles.messageText, 
+          { color: item.isMe ? theme.colors.textInverse : theme.colors.textPrimary }
+        ]}>
           {item.text}
         </Text>
-        <Text style={[styles.messageTime, item.isMe && styles.myMessageTime]}>
+        <Text style={[
+          styles.messageTime, 
+          { color: item.isMe ? `${theme.colors.textInverse}80` : theme.colors.textTertiary }
+        ]}>
           {formatTime(item.timestamp)}
         </Text>
       </View>
     </View>
   );
 
-  const renderContact = ({ item }) => (
+  const renderContact = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[
         styles.contactItem,
-        selectedChat?.id === item.id && styles.activeContact,
+        { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.borderLight },
+        selectedChat?.id === item.id && { backgroundColor: `${theme.colors.primary}20` },
       ]}
       onPress={() => handleChatSelect(item)}>
       <View style={styles.contactAvatarContainer}>
-        <View style={styles.contactAvatar}>
-        <Text style={styles.contactAvatarText}>{item.avatar}</Text>
-        {item.online && <View style={styles.onlineIndicator} />}
+        <View style={[styles.contactAvatar, { backgroundColor: theme.colors.primary }]}>
+          <Text style={[styles.contactAvatarText, { color: theme.colors.textInverse }]}>{item.avatar}</Text>
+          {item.online && <View style={[styles.onlineIndicator, { backgroundColor: theme.colors.secondary, borderColor: theme.colors.surface }]} />}
         </View>
         {item.streak > 0 && (
-          <View style={styles.streakBadge}>
-            <Text style={styles.streakText}>{item.streak}</Text>
+          <View style={[styles.streakBadge, { backgroundColor: theme.colors.accent, borderColor: theme.colors.surface }]}>
+            <Text style={[styles.streakText, { color: theme.colors.textPrimary }]}>{item.streak}</Text>
           </View>
         )}
       </View>
       <View style={styles.contactInfo}>
         <View style={styles.contactHeader}>
-          <Text style={styles.contactName}>{item.name}</Text>
-          <Text style={styles.lastSeenTime}>
-            {item.online ? 'Online' : formatLastSeen(item.lastSeen)}
+          <Text style={[styles.contactName, { color: theme.colors.textPrimary }]}>{item.name}</Text>
+          <Text style={[styles.lastSeenTime, { color: theme.colors.textTertiary }]}>
+            {item.online ? 'Ari hano (Online)' : formatLastSeen(item.lastSeen)}
           </Text>
         </View>
         <View style={styles.messagePreview}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
+          <Text style={[styles.lastMessage, { color: theme.colors.textSecondary }]} numberOfLines={1}>
             {item.lastMessage}
           </Text>
           {item.unread > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unread}</Text>
+            <View style={[styles.unreadBadge, { backgroundColor: theme.colors.primary }]}>
+              <Text style={[styles.unreadText, { color: theme.colors.textInverse }]}>{item.unread}</Text>
             </View>
           )}
         </View>
@@ -241,10 +257,11 @@ export default function ChatScreen() {
 
   if (selectedChat) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Animated.View 
           style={[
             styles.chatContainer,
+            { backgroundColor: theme.colors.background },
             {
               transform: [{
                 translateX: slideAnim.interpolate({
@@ -254,24 +271,26 @@ export default function ChatScreen() {
               }],
             },
           ]}>
-          <View style={styles.chatHeader}>
+          <View style={[styles.chatHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity onPress={handleBackToList} style={styles.backButton}>
-              <Text style={styles.backText}>←</Text>
+              <ArrowLeft size={24} color={theme.colors.primary} />
             </TouchableOpacity>
             <View style={styles.chatHeaderInfo}>
-              <View style={styles.chatAvatar}>
-                <Text style={styles.chatAvatarText}>{selectedChat.avatar}</Text>
-                {selectedChat.online && <View style={styles.chatOnlineIndicator} />}
+              <View style={[styles.chatAvatar, { backgroundColor: theme.colors.primary }]}>
+                <Text style={[styles.chatAvatarText, { color: theme.colors.textInverse }]}>{selectedChat.avatar}</Text>
+                {selectedChat.online && <View style={[styles.chatOnlineIndicator, { backgroundColor: theme.colors.secondary, borderColor: theme.colors.surface }]} />}
               </View>
               <View>
-                <Text style={styles.chatName}>{selectedChat.name}</Text>
-                <Text style={styles.chatStatus}>
-                  {selectedChat.online ? 'Online' : `Last seen ${formatLastSeen(selectedChat.lastSeen)}`}
+                <Text style={[styles.chatName, { color: theme.colors.textPrimary }]}>{selectedChat.name}</Text>
+                <Text style={[styles.chatStatus, { color: theme.colors.textSecondary }]}>
+                  {selectedChat.online ? 'Ari hano (Online)' : `Yabonetse ${formatLastSeen(selectedChat.lastSeen)}`}
                 </Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.sendMoneyButton} onPress={sendMoney}>
-              <DollarSign size={20} color="#FFD166" />
+            <TouchableOpacity 
+              style={[styles.sendMoneyButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.accent }]} 
+              onPress={sendMoney}>
+              <DollarSign size={20} color={theme.colors.accent} />
             </TouchableOpacity>
           </View>
 
@@ -279,21 +298,22 @@ export default function ChatScreen() {
             data={messages}
             renderItem={renderMessage}
             keyExtractor={(item) => item.id.toString()}
-            style={styles.messagesList}
+            style={[styles.messagesList, { backgroundColor: theme.colors.background }]}
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: theme.spacing.md }}
           />
 
-          <View style={styles.inputContainer}>
+          <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
             <TextInput
-              style={styles.messageInput}
-              placeholder="Type a message..."
+              style={[styles.messageInput, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border, color: theme.colors.textPrimary }]}
+              placeholder="Andika ubutumwa... (Type a message...)"
               value={message}
               onChangeText={setMessage}
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.colors.textTertiary}
               multiline
             />
-            <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-              <Send size={20} color="#fff" />
+            <TouchableOpacity style={[styles.sendButton, { backgroundColor: theme.colors.primary }]} onPress={sendMessage}>
+              <Send size={20} color={theme.colors.textInverse} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -302,65 +322,70 @@ export default function ChatScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
-        <View style={styles.searchContainer}>
-          <Search size={20} color="#666" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
-          />
-        </View>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollContainer>
+        <ResponsiveContainer maxWidth={600}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+              Ubutumwa (Messages)
+            </Text>
+            <View style={[styles.searchContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
+              <Search size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
+              <TextInput
+                style={[styles.searchInput, { color: theme.colors.textPrimary }]}
+                placeholder="Shakisha abo mubana... (Search contacts...)"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={theme.colors.textTertiary}
+              />
+            </View>
+          </View>
 
-      <FlatList
-        data={contacts}
-        renderItem={renderContact}
-        keyExtractor={(item) => item.id.toString()}
-        showsVerticalScrollIndicator={false}
-        style={styles.contactsList}
-      />
+          <FlatList
+            data={contacts}
+            renderItem={renderContact}
+            keyExtractor={(item) => item.id.toString()}
+            showsVerticalScrollIndicator={false}
+            style={styles.contactsList}
+            scrollEnabled={false}
+          />
+        </ResponsiveContainer>
+      </ScrollContainer>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isMobile: boolean, width: number) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
-    padding: 20,
-    paddingTop: 40,
-    backgroundColor: '#FAFAFA',
+    paddingVertical: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    borderBottomColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
-    marginBottom: 16,
+    fontSize: isMobile ? theme.typography.fontSizes.xxl : theme.typography.fontSizes.xxxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.md,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderRadius: theme.borderRadius.medium,
+    paddingHorizontal: theme.spacing.md,
+    borderWidth: 1,
+    minHeight: 44,
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: theme.spacing.md,
   },
   searchInput: {
     flex: 1,
-    height: 44,
-    fontSize: 16,
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    paddingVertical: theme.spacing.sm,
   },
   contactsList: {
     flex: 1,
@@ -368,22 +393,18 @@ const styles = StyleSheet.create({
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  activeContact: {
-    backgroundColor: '#6C63FF20',
+    minHeight: 80,
   },
   contactAvatarContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: theme.spacing.md,
   },
   contactAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#6C63FF',
+    width: isMobile ? 50 : 60,
+    height: isMobile ? 50 : 60,
+    borderRadius: isMobile ? 25 : 30,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -392,24 +413,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: '#FFD166',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FAFAFA',
   },
   streakText: {
-    color: '#2F2F2F',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: theme.typography.fontWeights.bold,
   },
   contactAvatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   onlineIndicator: {
     position: 'absolute',
@@ -418,9 +435,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#00C896',
     borderWidth: 2,
-    borderColor: '#FAFAFA',
   },
   contactInfo: {
     flex: 1,
@@ -429,16 +444,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: theme.spacing.xs,
   },
   contactName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   lastSeenTime: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
   },
   messagePreview: {
     flexDirection: 'row',
@@ -447,12 +460,10 @@ const styles = StyleSheet.create({
   },
   lastMessage: {
     flex: 1,
-    fontSize: 12,
-    color: '#666',
-    marginRight: 8,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    marginRight: theme.spacing.sm,
   },
   unreadBadge: {
-    backgroundColor: '#6C63FF',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -460,49 +471,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   unreadText: {
-    color: '#FAFAFA',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: theme.typography.fontWeights.bold,
   },
   chatContainer: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   backButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  backText: {
-    fontSize: 24,
-    color: '#6C63FF',
-    fontWeight: 'bold',
+    padding: theme.spacing.sm,
+    marginRight: theme.spacing.sm,
   },
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
+    minHeight: 70,
   },
   chatHeaderInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   chatAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#6C63FF',
+    width: isMobile ? 40 : 48,
+    height: isMobile ? 40 : 48,
+    borderRadius: isMobile ? 20 : 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: theme.spacing.md,
     position: 'relative',
   },
   chatAvatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   chatOnlineIndicator: {
     position: 'absolute',
@@ -511,36 +514,30 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#00C896',
     borderWidth: 2,
-    borderColor: '#FAFAFA',
   },
   chatName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   chatStatus: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
   },
   sendMoneyButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FAFAFA',
     borderWidth: 2,
-    borderColor: '#FFD166',
     justifyContent: 'center',
     alignItems: 'center',
   },
   messagesList: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: theme.spacing.md,
   },
   messageContainer: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
     alignItems: 'flex-end',
   },
   myMessage: {
@@ -550,81 +547,61 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#6C63FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: theme.spacing.sm,
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: theme.typography.fontSizes.xs,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   messageBubble: {
     maxWidth: '70%',
-    backgroundColor: '#FFD166',
-    padding: 12,
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-  },
-  myMessageBubble: {
-    backgroundColor: '#6C63FF',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 4,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.large,
+    borderWidth: 1,
   },
   paymentIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#00C89620',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: theme.spacing.sm,
+    borderRadius: theme.borderRadius.small,
+    marginBottom: theme.spacing.sm,
   },
   paymentAmount: {
-    marginLeft: 4,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#00C896',
+    marginLeft: theme.spacing.xs,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   messageText: {
-    fontSize: 16,
-    color: '#2F2F2F',
-    marginBottom: 4,
-  },
-  myMessageText: {
-    color: '#FAFAFA',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    marginBottom: theme.spacing.xs,
+    lineHeight: theme.typography.lineHeights.normal * (isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg),
   },
   messageTime: {
-    fontSize: 12,
-    color: '#666',
-  },
-  myMessageTime: {
-    color: '#FAFAFA80',
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 16,
+    padding: theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#e5e5e5',
+    gap: theme.spacing.md,
   },
   messageInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginRight: 12,
+    borderRadius: theme.borderRadius.large,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     maxHeight: 100,
-    fontSize: 16,
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    minHeight: 44,
   },
   sendButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#6C63FF',
     justifyContent: 'center',
     alignItems: 'center',
   },

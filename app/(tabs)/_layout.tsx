@@ -1,31 +1,38 @@
 import { Tabs } from 'expo-router';
 import { Wallet, Send, MessageCircle, Receipt, User } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: APP_CONSTANTS.COLORS.PRIMARY,
-        tabBarInactiveTintColor: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
+          backgroundColor: theme.colors.surface,
           borderTopWidth: 1,
-          borderTopColor: APP_CONSTANTS.COLORS.BORDER,
-          paddingBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
-          paddingTop: APP_CONSTANTS.DESIGN.SPACING.SM,
+          borderTopColor: theme.colors.border,
+          paddingBottom: theme.spacing.sm,
+          paddingTop: theme.spacing.sm,
           height: 60,
-          ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
+          shadowColor: theme.colors.shadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
+          elevation: 2,
         },
         tabBarLabelStyle: {
-          fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
-          fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.MEDIUM,
+          fontSize: theme.typography.fontSizes.xs,
+          fontWeight: theme.typography.fontWeights.medium,
         },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Amafaranga',
+          title: 'Amafaranga (Wallet)',
           tabBarIcon: ({ size, color }) => (
             <Wallet size={size} color={color} />
           ),
@@ -34,7 +41,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="transfer"
         options={{
-          title: 'Kohereza',
+          title: 'Kohereza (Send)',
           tabBarIcon: ({ size, color }) => (
             <Send size={size} color={color} />
           ),
@@ -43,7 +50,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Ubutumwa',
+          title: 'Ubutumwa (Chat)',
           tabBarIcon: ({ size, color }) => (
             <MessageCircle size={size} color={color} />
           ),
@@ -52,7 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="bills"
         options={{
-          title: 'Fagitire',
+          title: 'Fagitire (Bills)',
           tabBarIcon: ({ size, color }) => (
             <Receipt size={size} color={color} />
           ),
@@ -61,7 +68,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Umwirondoro',
+          title: 'Umwirondoro (Profile)',
           tabBarIcon: ({ size, color }) => (
             <User size={size} color={color} />
           ),

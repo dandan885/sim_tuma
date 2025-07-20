@@ -3,12 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   SafeAreaView,
   Animated,
   RefreshControl,
-  Dimensions,
 } from 'react-native';
 import {
   Eye,
@@ -17,27 +15,28 @@ import {
   ArrowDownLeft,
   Clock,
   CreditCard,
-  RefreshCw,
   Plus,
   TrendingUp,
+  Settings,
 } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { ScrollContainer } from '@/components/ui/ScrollContainer';
 import { useBalance } from '@/hooks/useBalance';
 import { useTransactionHistory } from '@/hooks/useTransactionHistory';
-import { formatCurrency, hiddenBalance, formatTimeAgo, APP_CONSTANTS } from '@/constants/AppConstants';
+import { formatCurrency, hiddenBalance, formatTimeAgo } from '@/constants/AppConstants';
 import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
-import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
-
-const { width } = Dimensions.get('window');
+import { useTheme } from '@/contexts/ThemeContext';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function WalletScreen() {
+  const { theme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const [fadeAnim] = useState(new Animated.Value(0));
   const { balance, isLoading, error, isHidden, toggleBalanceVisibility, refreshBalance } = useBalance();
   const { transactions, isLoading: transactionsLoading, refreshTransactions } = useTransactionHistory();
   const [refreshing, setRefreshing] = useState(false);
-
-  const isTablet = width >= APP_CONSTANTS.BREAKPOINTS.TABLET;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -58,28 +57,28 @@ export default function WalletScreen() {
       icon: ArrowUpRight, 
       label: 'Kohereza', 
       labelEn: 'Send', 
-      color: APP_CONSTANTS.COLORS.PRIMARY,
+      color: theme.colors.primary,
       route: '/transfer'
     },
     { 
       icon: ArrowDownLeft, 
       label: 'Saba', 
       labelEn: 'Request', 
-      color: APP_CONSTANTS.COLORS.SECONDARY,
+      color: theme.colors.secondary,
       route: '/request'
     },
     { 
       icon: CreditCard, 
       label: 'Fagitire', 
       labelEn: 'Bills', 
-      color: APP_CONSTANTS.COLORS.ACCENT,
+      color: theme.colors.accent,
       route: '/bills'
     },
     { 
       icon: Clock, 
       label: 'Gahunda', 
       labelEn: 'Schedule', 
-      color: APP_CONSTANTS.COLORS.INFO,
+      color: theme.colors.info,
       route: '/schedule'
     },
   ];
@@ -87,20 +86,22 @@ export default function WalletScreen() {
   const displayBalance = isHidden ? hiddenBalance(balance) : formatCurrency(balance);
   const recentTransactions = transactions.slice(0, 5);
 
+  const styles = createStyles(theme, isMobile, isTablet);
+
   const renderQuickAction = (action: any, index: number) => (
     <TouchableOpacity
       key={index}
       style={[
         styles.actionButton,
         { backgroundColor: action.color },
-        isTablet && styles.actionButtonTablet,
       ]}
-      onPress={() => console.log(`Navigate to ${action.route}`)}>
-      <action.icon size={isTablet ? 28 : 24} color={APP_CONSTANTS.COLORS.TEXT_INVERSE} />
-      <Text style={[styles.actionLabel, isTablet && styles.actionLabelTablet]}>
+      onPress={() => router.push(action.route)}
+      activeOpacity={0.8}>
+      <action.icon size={isMobile ? 24 : 28} color={theme.colors.textInverse} />
+      <Text style={styles.actionLabel}>
         {action.label}
       </Text>
-      <Text style={[styles.actionLabelEn, isTablet && styles.actionLabelEnTablet]}>
+      <Text style={styles.actionLabelEn}>
         {action.labelEn}
       </Text>
     </TouchableOpacity>
@@ -113,33 +114,33 @@ export default function WalletScreen() {
           styles.transactionIcon,
           {
             backgroundColor: transaction.type === 'received' 
-              ? `${APP_CONSTANTS.COLORS.SECONDARY}20` 
+              ? `${theme.colors.secondary}20` 
               : transaction.type === 'sent' 
-              ? `${APP_CONSTANTS.COLORS.PRIMARY}20` 
-              : `${APP_CONSTANTS.COLORS.ACCENT}20`,
+              ? `${theme.colors.primary}20` 
+              : `${theme.colors.accent}20`,
           },
         ]}>
         {transaction.type === 'received' ? (
-          <ArrowDownLeft size={20} color={APP_CONSTANTS.COLORS.SECONDARY} />
+          <ArrowDownLeft size={20} color={theme.colors.secondary} />
         ) : transaction.type === 'sent' ? (
-          <ArrowUpRight size={20} color={APP_CONSTANTS.COLORS.PRIMARY} />
+          <ArrowUpRight size={20} color={theme.colors.primary} />
         ) : (
-          <CreditCard size={20} color={APP_CONSTANTS.COLORS.ACCENT} />
+          <CreditCard size={20} color={theme.colors.accent} />
         )}
       </View>
       
       <View style={styles.transactionDetails}>
-        <Text style={styles.transactionDescription}>
+        <Text style={[styles.transactionDescription, { color: theme.colors.textPrimary }]}>
           {transaction.description}
         </Text>
-        <Text style={styles.transactionPerson}>
+        <Text style={[styles.transactionPerson, { color: theme.colors.textSecondary }]}>
           {transaction.type === 'received' && transaction.sender
             ? `Kuva kuri ${transaction.sender} (From ${transaction.sender})`
             : transaction.type === 'sent' && transaction.recipient
             ? `Kuri ${transaction.recipient} (To ${transaction.recipient})`
             : 'Kwishyura Fagitire (Bill Payment)'}
         </Text>
-        <Text style={styles.transactionTime}>
+        <Text style={[styles.transactionTime, { color: theme.colors.textTertiary }]}>
           {formatTimeAgo(transaction.timestamp)}
         </Text>
       </View>
@@ -150,19 +151,19 @@ export default function WalletScreen() {
             styles.transactionAmount,
             {
               color: transaction.type === 'received' 
-                ? APP_CONSTANTS.COLORS.SECONDARY 
+                ? theme.colors.secondary 
                 : transaction.type === 'sent' 
-                ? APP_CONSTANTS.COLORS.PRIMARY 
-                : APP_CONSTANTS.COLORS.ACCENT,
+                ? theme.colors.primary 
+                : theme.colors.accent,
             },
           ]}>
           {transaction.type === 'received' ? '+' : '-'}{formatCurrency(transaction.amount)}
         </Text>
         <View style={[
           styles.statusBadge,
-          { backgroundColor: transaction.status === 'completed' ? APP_CONSTANTS.COLORS.SECONDARY : APP_CONSTANTS.COLORS.WARNING }
+          { backgroundColor: transaction.status === 'completed' ? theme.colors.secondary : theme.colors.warning }
         ]}>
-          <Text style={styles.statusText}>
+          <Text style={[styles.statusText, { color: theme.colors.textInverse }]}>
             {transaction.status === 'completed' ? 'Byarangiye' : 'Bitegereje'}
           </Text>
         </View>
@@ -172,7 +173,7 @@ export default function WalletScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <LoadingState message="Gukuramo amakuru... (Loading data...)" />
       </SafeAreaView>
     );
@@ -180,7 +181,7 @@ export default function WalletScreen() {
 
   if (error && !balance) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <ErrorState 
           title="Ikibazo cyo gukuramo amakuru (Data Loading Error)"
           message={error}
@@ -191,38 +192,54 @@ export default function WalletScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollContainer
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh}
-            colors={[APP_CONSTANTS.COLORS.PRIMARY]}
-            tintColor={APP_CONSTANTS.COLORS.PRIMARY}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
           />
         }>
         
         <ResponsiveContainer maxWidth={800}>
           {/* Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={styles.greeting}>Mwaramutse! (Good morning!)</Text>
-              <Text style={styles.username}>Murakaza neza, Alex</Text>
+            <View style={styles.headerLeft}>
+              <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
+                Mwaramutse! (Good morning!)
+              </Text>
+              <Text style={[styles.username, { color: theme.colors.textPrimary }]}>
+                Murakaza neza, Alex
+              </Text>
             </View>
-            <TouchableOpacity style={styles.profileButton}>
-              <View style={styles.profileAvatar}>
-                <Text style={styles.profileAvatarText}>AU</Text>
+            <TouchableOpacity 
+              style={styles.profileButton}
+              onPress={() => router.push('/(tabs)/profile')}>
+              <View style={[styles.profileAvatar, { backgroundColor: theme.colors.primary }]}>
+                <Text style={[styles.profileAvatarText, { color: theme.colors.textInverse }]}>
+                  AU
+                </Text>
               </View>
+              <Settings size={16} color={theme.colors.textSecondary} style={styles.settingsIcon} />
             </TouchableOpacity>
           </View>
 
           {/* Balance Card */}
-          <Animated.View style={[styles.balanceCard, { opacity: fadeAnim }]}>
+          <Animated.View style={[
+            styles.balanceCard, 
+            { 
+              backgroundColor: theme.colors.primary,
+              opacity: fadeAnim,
+            }
+          ]}>
             <View style={styles.balanceHeader}>
-              <View>
-                <Text style={styles.balanceLabel}>Amafaranga Yose (Total Balance)</Text>
-                <Text style={styles.balanceAmount}>
+              <View style={styles.balanceInfo}>
+                <Text style={[styles.balanceLabel, { color: `${theme.colors.textInverse}90` }]}>
+                  Amafaranga Yose (Total Balance)
+                </Text>
+                <Text style={[styles.balanceAmount, { color: theme.colors.textInverse }]}>
                   {displayBalance}
                 </Text>
               </View>
@@ -230,333 +247,361 @@ export default function WalletScreen() {
                 onPress={toggleBalanceVisibility}
                 style={styles.eyeButton}>
                 {!isHidden ? (
-                  <Eye size={24} color={APP_CONSTANTS.COLORS.TEXT_INVERSE} />
+                  <Eye size={24} color={theme.colors.textInverse} />
                 ) : (
-                  <EyeOff size={24} color={APP_CONSTANTS.COLORS.TEXT_INVERSE} />
+                  <EyeOff size={24} color={theme.colors.textInverse} />
                 )}
               </TouchableOpacity>
             </View>
             
             <View style={styles.cardFooter}>
               <View style={styles.cardInfo}>
-                <Text style={styles.cardNumber}>**** **** **** 1234</Text>
-                <Text style={styles.cardType}>MTN MoMo</Text>
+                <Text style={[styles.cardNumber, { color: `${theme.colors.textInverse}80` }]}>
+                  **** **** **** 1234
+                </Text>
+                <Text style={[styles.cardType, { color: `${theme.colors.textInverse}60` }]}>
+                  MTN MoMo Rwanda
+                </Text>
               </View>
-              <View style={styles.balanceActions}>
-                <TouchableOpacity style={styles.addMoneyButton}>
-                  <Plus size={16} color={APP_CONSTANTS.COLORS.PRIMARY} />
-                  <Text style={styles.addMoneyText}>Kongeramo (Add)</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={[styles.addMoneyButton, { backgroundColor: theme.colors.textInverse }]}>
+                <Plus size={16} color={theme.colors.primary} />
+                <Text style={[styles.addMoneyText, { color: theme.colors.primary }]}>
+                  Kongeramo (Add)
+                </Text>
+              </TouchableOpacity>
             </View>
           </Animated.View>
 
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
-            <Text style={styles.sectionTitle}>Ibikorwa Byihuse (Quick Actions)</Text>
-            <View style={[styles.quickActions, isTablet && styles.quickActionsTablet]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+              Ibikorwa Byihuse (Quick Actions)
+            </Text>
+            <View style={styles.quickActions}>
               {quickActions.map(renderQuickAction)}
             </View>
           </View>
 
           {/* Statistics */}
           <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <TrendingUp size={24} color={APP_CONSTANTS.COLORS.SECONDARY} />
-              <Text style={styles.statValue}>+12%</Text>
-              <Text style={styles.statLabel}>Ukwezi gushize (This month)</Text>
+            <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <TrendingUp size={24} color={theme.colors.secondary} />
+              <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>+12%</Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                Ukwezi gushize (This month)
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <CreditCard size={24} color={APP_CONSTANTS.COLORS.ACCENT} />
-              <Text style={styles.statValue}>{transactions.length}</Text>
-              <Text style={styles.statLabel}>Ibikorwa (Transactions)</Text>
+            <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <CreditCard size={24} color={theme.colors.accent} />
+              <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>
+                {transactions.length}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                Ibikorwa (Transactions)
+              </Text>
             </View>
           </View>
 
           {/* Recent Transactions */}
           <View style={styles.transactionsSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Ibikorwa Bya Vuba (Recent Transactions)</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                Ibikorwa Bya Vuba (Recent Transactions)
+              </Text>
               <TouchableOpacity>
-                <Text style={styles.viewAll}>Byose (View All)</Text>
+                <Text style={[styles.viewAll, { color: theme.colors.primary }]}>
+                  Byose (View All)
+                </Text>
               </TouchableOpacity>
             </View>
 
             {transactionsLoading ? (
               <LoadingState size="small" message="Gukuramo ibikorwa... (Loading transactions...)" />
             ) : recentTransactions.length > 0 ? (
-              <View style={styles.transactionsList}>
+              <View style={[styles.transactionsList, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                 {recentTransactions.map(renderTransaction)}
               </View>
             ) : (
-              <View style={styles.emptyState}>
-                <CreditCard size={48} color={APP_CONSTANTS.COLORS.TEXT_TERTIARY} />
-                <Text style={styles.emptyText}>Nta bikorwa (No transactions yet)</Text>
-                <Text style={styles.emptySubtext}>Tangira kohereza cyangwa kwakira amafaranga</Text>
+              <View style={[styles.emptyState, { backgroundColor: theme.colors.surface }]}>
+                <CreditCard size={48} color={theme.colors.textTertiary} />
+                <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                  Nta bikorwa (No transactions yet)
+                </Text>
+                <Text style={[styles.emptySubtext, { color: theme.colors.textTertiary }]}>
+                  Tangira kohereza cyangwa kwakira amafaranga
+                </Text>
               </View>
             )}
           </View>
         </ResponsiveContainer>
-      </ScrollView>
+      </ScrollContainer>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: APP_CONSTANTS.COLORS.BACKGROUND,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.LG,
+    paddingVertical: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+  },
+  headerLeft: {
+    flex: 1,
   },
   greeting: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    marginBottom: theme.spacing.xs,
   },
   username: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XXL,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
+    fontSize: isMobile ? theme.typography.fontSizes.xxl : theme.typography.fontSizes.xxxl,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   profileButton: {
-    padding: APP_CONSTANTS.DESIGN.SPACING.XS,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.xs,
   },
   profileAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: APP_CONSTANTS.COLORS.PRIMARY,
+    width: isMobile ? 40 : 48,
+    height: isMobile ? 40 : 48,
+    borderRadius: isMobile ? 20 : 24,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: theme.spacing.sm,
   },
   profileAvatarText: {
-    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.bold,
+  },
+  settingsIcon: {
+    opacity: 0.7,
   },
   balanceCard: {
-    backgroundColor: APP_CONSTANTS.COLORS.PRIMARY,
-    padding: APP_CONSTANTS.DESIGN.SPACING.XL,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.LARGE,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
-    ...APP_CONSTANTS.DESIGN.SHADOWS.LARGE,
+    padding: isMobile ? theme.spacing.xl : theme.spacing.xxl,
+    borderRadius: theme.borderRadius.large,
+    marginBottom: theme.spacing.xl,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   balanceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.LG,
+    marginBottom: theme.spacing.lg,
+  },
+  balanceInfo: {
+    flex: 1,
   },
   balanceLabel: {
-    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}90`,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    marginBottom: theme.spacing.sm,
   },
   balanceAmount: {
-    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XXXL,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
+    fontSize: isMobile ? theme.typography.fontSizes.xxxl : 40,
+    fontWeight: theme.typography.fontWeights.bold,
+    flexWrap: 'wrap',
   },
   eyeButton: {
-    padding: APP_CONSTANTS.DESIGN.SPACING.SM,
+    padding: theme.spacing.sm,
+    marginLeft: theme.spacing.md,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: theme.spacing.md,
   },
   cardInfo: {
     flex: 1,
+    minWidth: 120,
   },
   cardNumber: {
-    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}80`,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    marginBottom: theme.spacing.xs,
   },
   cardType: {
-    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}60`,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-  },
-  balanceActions: {
-    alignItems: 'flex-end',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
   },
   addMoneyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: APP_CONSTANTS.COLORS.TEXT_INVERSE,
-    paddingHorizontal: APP_CONSTANTS.DESIGN.SPACING.MD,
-    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.SM,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.medium,
   },
   addMoneyText: {
-    marginLeft: APP_CONSTANTS.DESIGN.SPACING.XS,
-    color: APP_CONSTANTS.COLORS.PRIMARY,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+    marginLeft: theme.spacing.xs,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   quickActionsContainer: {
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+    marginBottom: theme.spacing.xl,
   },
   sectionTitle: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XL,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
+    fontSize: isMobile ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.md,
   },
   quickActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-  },
-  quickActionsTablet: {
-    justifyContent: 'space-around',
+    gap: theme.spacing.sm,
   },
   actionButton: {
-    width: '22%',
+    width: isMobile ? '48%' : '23%',
+    minWidth: 100,
     aspectRatio: 1,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.LARGE,
+    borderRadius: theme.borderRadius.large,
     justifyContent: 'center',
     alignItems: 'center',
-    ...APP_CONSTANTS.DESIGN.SHADOWS.MEDIUM,
-  },
-  actionButtonTablet: {
-    width: '20%',
-    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    padding: theme.spacing.md,
   },
   actionLabel: {
-    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
-    marginTop: APP_CONSTANTS.DESIGN.SPACING.XS,
+    color: theme.colors.textInverse,
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginTop: theme.spacing.xs,
     textAlign: 'center',
-  },
-  actionLabelTablet: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
   },
   actionLabelEn: {
-    color: `${APP_CONSTANTS.COLORS.TEXT_INVERSE}80`,
-    fontSize: 10,
+    color: `${theme.colors.textInverse}80`,
+    fontSize: isMobile ? 10 : theme.typography.fontSizes.xs,
     textAlign: 'center',
     fontStyle: 'italic',
-  },
-  actionLabelEnTablet: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
-    gap: APP_CONSTANTS.DESIGN.SPACING.MD,
+    marginBottom: theme.spacing.xl,
+    gap: theme.spacing.md,
   },
   statCard: {
     flex: 1,
-    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
-    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+    padding: isMobile ? theme.spacing.lg : theme.spacing.xl,
+    borderRadius: theme.borderRadius.medium,
     alignItems: 'center',
-    ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    minHeight: 100,
+    justifyContent: 'center',
   },
   statValue: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XL,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
-    marginVertical: APP_CONSTANTS.DESIGN.SPACING.SM,
+    fontSize: isMobile ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginVertical: theme.spacing.sm,
   },
   statLabel: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
     textAlign: 'center',
   },
   transactionsSection: {
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XL,
+    marginBottom: theme.spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.MD,
+    marginBottom: theme.spacing.md,
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
   },
   viewAll: {
-    color: APP_CONSTANTS.COLORS.PRIMARY,
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   transactionsList: {
-    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
-    ...APP_CONSTANTS.DESIGN.SHADOWS.SMALL,
+    borderRadius: theme.borderRadius.medium,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   transactionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: APP_CONSTANTS.DESIGN.SPACING.LG,
+    padding: isMobile ? theme.spacing.lg : theme.spacing.xl,
     borderBottomWidth: 1,
-    borderBottomColor: APP_CONSTANTS.COLORS.BORDER_LIGHT,
+    borderBottomColor: theme.colors.borderLight,
+    minHeight: 80,
   },
   transactionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: isMobile ? 48 : 56,
+    height: isMobile ? 48 : 56,
+    borderRadius: isMobile ? 24 : 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: APP_CONSTANTS.DESIGN.SPACING.MD,
+    marginRight: theme.spacing.md,
+    flexShrink: 0,
   },
   transactionDetails: {
     flex: 1,
+    marginRight: theme.spacing.md,
   },
   transactionDescription: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.BASE,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_PRIMARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginBottom: theme.spacing.xs,
   },
   transactionPerson: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    marginBottom: theme.spacing.xs,
   },
   transactionTime: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.XS,
-    color: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
   },
   transactionAmountContainer: {
     alignItems: 'flex-end',
+    flexShrink: 0,
   },
   transactionAmount: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.LG,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.BOLD,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.XS,
+    fontSize: isMobile ? theme.typography.fontSizes.lg : theme.typography.fontSizes.xl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.xs,
   },
   statusBadge: {
-    paddingHorizontal: APP_CONSTANTS.DESIGN.SPACING.SM,
-    paddingVertical: APP_CONSTANTS.DESIGN.SPACING.XS,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.SMALL,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.small,
   },
   statusText: {
-    color: APP_CONSTANTS.COLORS.TEXT_INVERSE,
     fontSize: 10,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   emptyState: {
     alignItems: 'center',
-    padding: APP_CONSTANTS.DESIGN.SPACING.XXL,
-    backgroundColor: APP_CONSTANTS.COLORS.SURFACE,
-    borderRadius: APP_CONSTANTS.DESIGN.BORDER_RADIUS.MEDIUM,
+    padding: isMobile ? theme.spacing.xxl : theme.spacing.xxl * 1.5,
+    borderRadius: theme.borderRadius.medium,
   },
   emptyText: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.LG,
-    fontWeight: APP_CONSTANTS.TYPOGRAPHY.FONT_WEIGHTS.SEMIBOLD,
-    color: APP_CONSTANTS.COLORS.TEXT_SECONDARY,
-    marginTop: APP_CONSTANTS.DESIGN.SPACING.MD,
-    marginBottom: APP_CONSTANTS.DESIGN.SPACING.SM,
+    fontSize: isMobile ? theme.typography.fontSizes.lg : theme.typography.fontSizes.xl,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
   emptySubtext: {
-    fontSize: APP_CONSTANTS.TYPOGRAPHY.FONT_SIZES.SM,
-    color: APP_CONSTANTS.COLORS.TEXT_TERTIARY,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
     textAlign: 'center',
   },
 });

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   Switch,
   Alert,
 } from 'react-native';
@@ -22,9 +21,18 @@ import {
   Smartphone,
   Lock,
   Eye,
+  Moon,
+  Sun,
 } from 'lucide-react-native';
+import { ScrollContainer } from '@/components/ui/ScrollContainer';
+import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ProfileScreen() {
+  const { theme, isDark } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
@@ -33,62 +41,72 @@ export default function ProfileScreen() {
     name: 'Alex Uwimana',
     phone: '+250 788 123 456',
     email: 'alex.uwimana@email.com',
-    accountStatus: 'Verified',
-    memberSince: 'January 2023',
+    accountStatus: 'Byemejwe (Verified)',
+    memberSince: 'Mutarama 2023 (January 2023)',
   };
 
   const profileSections = [
     {
-      title: 'Account Information',
+      title: 'Amakuru ya Konti (Account Information)',
       items: [
-        { icon: User, label: 'Personal Details', value: userInfo.name },
-        { icon: Phone, label: 'Phone Number', value: userInfo.phone },
-        { icon: Mail, label: 'Email Address', value: userInfo.email },
-        { icon: Shield, label: 'Account Status', value: userInfo.accountStatus },
+        { icon: User, label: 'Amakuru Bwite (Personal Details)', labelEn: 'Personal Details', value: userInfo.name },
+        { icon: Phone, label: 'Nomero ya Telefoni (Phone Number)', labelEn: 'Phone Number', value: userInfo.phone },
+        { icon: Mail, label: 'Aderesi ya Email (Email Address)', labelEn: 'Email Address', value: userInfo.email },
+        { icon: Shield, label: 'Uko Konti imeze (Account Status)', labelEn: 'Account Status', value: userInfo.accountStatus },
       ],
     },
     {
-      title: 'Security Settings',
+      title: 'Igenamiterere rya Umutekano (Security Settings)',
       items: [
-        { icon: Lock, label: 'Change PIN', hasChevron: true },
-        { icon: Smartphone, label: 'Biometric Login', hasSwitch: true, value: biometricsEnabled, onToggle: setBiometricsEnabled },
-        { icon: Shield, label: 'Two-Factor Auth', hasSwitch: true, value: twoFactorEnabled, onToggle: setTwoFactorEnabled },
-        { icon: Eye, label: 'Privacy Settings', hasChevron: true },
+        { icon: Lock, label: 'Hindura PIN (Change PIN)', labelEn: 'Change PIN', hasChevron: true },
+        { icon: Smartphone, label: 'Kwinjira na Biometric (Biometric Login)', labelEn: 'Biometric Login', hasSwitch: true, value: biometricsEnabled, onToggle: setBiometricsEnabled },
+        { icon: Shield, label: 'Umutekano wa Kabiri (Two-Factor Auth)', labelEn: 'Two-Factor Auth', hasSwitch: true, value: twoFactorEnabled, onToggle: setTwoFactorEnabled },
+        { icon: Eye, label: 'Igenamiterere rya Bwite (Privacy Settings)', labelEn: 'Privacy Settings', hasChevron: true },
       ],
     },
     {
-      title: 'Preferences',
+      title: 'Ibyo Uhitamo (Preferences)',
       items: [
-        { icon: Bell, label: 'Notifications', hasSwitch: true, value: notificationsEnabled, onToggle: setNotificationsEnabled },
-        { icon: CreditCard, label: 'Payment Methods', hasChevron: true },
-        { icon: Settings, label: 'App Settings', hasChevron: true },
+        { icon: Bell, label: 'Ubutumwa (Notifications)', labelEn: 'Notifications', hasSwitch: true, value: notificationsEnabled, onToggle: setNotificationsEnabled },
+        { icon: isDark ? Moon : Sun, label: 'Imiterere (Theme)', labelEn: 'Theme', hasCustom: true },
+        { icon: CreditCard, label: 'Uburyo bwo Kwishyura (Payment Methods)', labelEn: 'Payment Methods', hasChevron: true },
+        { icon: Settings, label: 'Igenamiterere rya Porogaramu (App Settings)', labelEn: 'App Settings', hasChevron: true },
       ],
     },
   ];
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Gusohoka (Logout)',
+      'Urashaka gusohoka kuri konti yawe? (Are you sure you want to logout?)',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => {
-          Alert.alert('Success', 'You have been logged out successfully');
+        { text: 'Hagarika (Cancel)', style: 'cancel' },
+        { text: 'Sohoka (Logout)', style: 'destructive', onPress: () => {
+          Alert.alert('Byarangiye (Success)', 'Wasohokaga neza (You have been logged out successfully)');
         }},
       ]
     );
   };
 
-  const renderProfileItem = (item, index) => (
-    <TouchableOpacity key={index} style={styles.profileItem}>
+  const styles = createStyles(theme, isMobile, isTablet);
+
+  const renderProfileItem = (item: any, index: number) => (
+    <TouchableOpacity key={index} style={[styles.profileItem, { borderBottomColor: theme.colors.borderLight }]}>
       <View style={styles.itemLeft}>
-        <View style={styles.itemIcon}>
-          <item.icon size={20} color="#6C63FF" />
+        <View style={[styles.itemIcon, { backgroundColor: `${theme.colors.primary}20` }]}>
+          <item.icon size={20} color={theme.colors.primary} />
         </View>
         <View style={styles.itemContent}>
-          <Text style={styles.itemLabel}>{item.label}</Text>
-          {item.value && !item.hasSwitch && (
-            <Text style={styles.itemValue}>{item.value}</Text>
+          <Text style={[styles.itemLabel, { color: theme.colors.textPrimary }]}>
+            {item.label}
+          </Text>
+          <Text style={[styles.itemLabelEn, { color: theme.colors.textSecondary }]}>
+            {item.labelEn}
+          </Text>
+          {item.value && !item.hasSwitch && !item.hasCustom && (
+            <Text style={[styles.itemValue, { color: theme.colors.textSecondary }]}>
+              {item.value}
+            </Text>
           )}
         </View>
       </View>
@@ -97,108 +115,130 @@ export default function ProfileScreen() {
           <Switch
             value={item.value}
             onValueChange={item.onToggle}
-            trackColor={{ false: '#e5e5e5', true: '#FFD166' }}
-            thumbColor={item.value ? '#6C63FF' : '#FAFAFA'}
+            trackColor={{ false: theme.colors.border, true: `${theme.colors.primary}60` }}
+            thumbColor={item.value ? theme.colors.primary : theme.colors.surface}
           />
         )}
+        {item.hasCustom && item.label.includes('Imiterere') && (
+          <ThemeToggle size={20} />
+        )}
         {item.hasChevron && (
-          <ChevronRight size={20} color="#666" />
+          <ChevronRight size={20} color={theme.colors.textSecondary} />
         )}
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
-
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>AM</Text>
-            </View>
-            <View style={styles.statusBadge}>
-              <Shield size={12} color="#fff" />
-            </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollContainer contentContainerStyle={styles.scrollContent}>
+        <ResponsiveContainer maxWidth={600}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+              Umwirondoro (Profile)
+            </Text>
           </View>
-          <Text style={styles.userName}>{userInfo.name}</Text>
-          <Text style={styles.userPhone}>{userInfo.phone}</Text>
-          <Text style={styles.memberSince}>Member since {userInfo.memberSince}</Text>
-        </View>
 
-        {/* Profile Sections */}
-        {profileSections.map((section, sectionIndex) => (
-          <View key={sectionIndex} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionContent}>
-              {section.items.map(renderProfileItem)}
+          {/* Profile Card */}
+          <View style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.avatarContainer}>
+              <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
+                <Text style={[styles.avatarText, { color: theme.colors.textInverse }]}>AU</Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: theme.colors.secondary, borderColor: theme.colors.surface }]}>
+                <Shield size={12} color={theme.colors.textInverse} />
+              </View>
             </View>
+            <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>
+              {userInfo.name}
+            </Text>
+            <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
+              {userInfo.phone}
+            </Text>
+            <Text style={[styles.memberSince, { color: theme.colors.textTertiary }]}>
+              Umunyamuryango kuva {userInfo.memberSince}
+            </Text>
           </View>
-        ))}
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+          {/* Profile Sections */}
+          {profileSections.map((section, sectionIndex) => (
+            <View key={sectionIndex} style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
+                {section.title}
+              </Text>
+              <View style={[styles.sectionContent, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                {section.items.map(renderProfileItem)}
+              </View>
+            </View>
+          ))}
 
-        {/* App Version */}
-        <View style={styles.appVersion}>
-          <Text style={styles.versionText}>MTN Mobile Money v2.1.0</Text>
-          <Text style={styles.buildText}>Build 2024.01.15</Text>
-        </View>
-      </ScrollView>
+          {/* Logout Button */}
+          <TouchableOpacity 
+            style={[styles.logoutButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.error }]} 
+            onPress={handleLogout}>
+            <LogOut size={20} color={theme.colors.error} />
+            <Text style={[styles.logoutText, { color: theme.colors.error }]}>
+              Sohoka (Logout)
+            </Text>
+          </TouchableOpacity>
+
+          {/* App Version */}
+          <View style={styles.appVersion}>
+            <Text style={[styles.versionText, { color: theme.colors.textSecondary }]}>
+              SimTuma Rwanda v2.1.0
+            </Text>
+            <Text style={[styles.buildText, { color: theme.colors.textTertiary }]}>
+              Build 2024.01.15
+            </Text>
+          </View>
+        </ResponsiveContainer>
+      </ScrollContainer>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: theme.spacing.xl,
   },
   header: {
-    padding: 20,
-    paddingTop: 40,
+    paddingVertical: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.xxl : theme.typography.fontSizes.xxxl,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   profileCard: {
-    backgroundColor: '#FAFAFA',
-    marginHorizontal: 20,
-    padding: 24,
-    borderRadius: 16,
+    padding: isMobile ? theme.spacing.xl : theme.spacing.xxl,
+    borderRadius: theme.borderRadius.large,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
+    borderWidth: 1,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#6C63FF',
+    width: isMobile ? 80 : 100,
+    height: isMobile ? 80 : 100,
+    borderRadius: isMobile ? 40 : 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: isMobile ? theme.typography.fontSizes.xxxl : 40,
+    fontWeight: theme.typography.fontWeights.bold,
   },
   statusBadge: {
     position: 'absolute',
@@ -207,54 +247,47 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#00C896',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#FAFAFA',
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
-    marginBottom: 4,
+    fontSize: isMobile ? theme.typography.fontSizes.xxl : theme.typography.fontSizes.xxxl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.xs,
   },
   userPhone: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    marginBottom: theme.spacing.sm,
   },
   memberSince: {
-    fontSize: 14,
-    color: '#999',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: theme.spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    fontSize: isMobile ? theme.typography.fontSizes.lg : theme.typography.fontSizes.xl,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.md,
   },
   sectionContent: {
-    backgroundColor: '#FAFAFA',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    borderRadius: theme.borderRadius.large,
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   profileItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    minHeight: 70,
   },
   itemLeft: {
     flexDirection: 'row',
@@ -262,60 +295,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#6C63FF20',
+    width: isMobile ? 40 : 48,
+    height: isMobile ? 40 : 48,
+    borderRadius: isMobile ? 20 : 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: theme.spacing.md,
   },
   itemContent: {
     flex: 1,
   },
   itemLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#2F2F2F',
-    marginBottom: 2,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.medium,
+    marginBottom: theme.spacing.xs,
+  },
+  itemLabelEn: {
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontStyle: 'italic',
+    marginBottom: theme.spacing.xs,
   },
   itemValue: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
   },
   itemRight: {
     alignItems: 'center',
+    marginLeft: theme.spacing.md,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FAFAFA',
-    marginHorizontal: 20,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 30,
+    padding: isMobile ? theme.spacing.md : theme.spacing.lg,
+    borderRadius: theme.borderRadius.medium,
+    marginBottom: theme.spacing.xl,
     borderWidth: 1,
-    borderColor: '#EF4444',
+    gap: theme.spacing.sm,
+    minHeight: 56,
   },
   logoutText: {
-    color: '#EF4444',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   appVersion: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
   },
   versionText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    marginBottom: theme.spacing.xs,
   },
   buildText: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: isMobile ? theme.typography.fontSizes.xs : theme.typography.fontSizes.sm,
   },
 });
