@@ -28,31 +28,25 @@ import { ScrollContainer } from '@/components/ui/ScrollContainer';
 import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ProfileScreen() {
   const { theme, isDark } = useTheme();
+  const { user, logout } = useAuth();
   const { isMobile, isTablet } = useResponsive();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
-
-  const userInfo = {
-    name: 'Alex Uwimana',
-    phone: '+250 788 123 456',
-    email: 'alex.uwimana@email.com',
-    accountStatus: 'Byemejwe (Verified)',
-    memberSince: 'Mutarama 2023 (January 2023)',
-  };
 
   const profileSections = [
     {
       title: 'Amakuru ya Konti (Account Information)',
       items: [
         { icon: User, label: 'Amakuru Bwite (Personal Details)', labelEn: 'Personal Details', value: userInfo.name },
-        { icon: Phone, label: 'Nomero ya Telefoni (Phone Number)', labelEn: 'Phone Number', value: userInfo.phone },
-        { icon: Mail, label: 'Aderesi ya Email (Email Address)', labelEn: 'Email Address', value: userInfo.email },
-        { icon: Shield, label: 'Uko Konti imeze (Account Status)', labelEn: 'Account Status', value: userInfo.accountStatus },
+        { icon: Phone, label: 'Nomero ya Telefoni (Phone Number)', labelEn: 'Phone Number', value: user?.phone },
+        { icon: Mail, label: 'Aderesi ya Email (Email Address)', labelEn: 'Email Address', value: user?.email || 'Ntabwo yasobanuwe (Not provided)' },
+        { icon: Shield, label: 'Uko Konti imeze (Account Status)', labelEn: 'Account Status', value: user?.isVerified ? 'Byemejwe (Verified)' : 'Bitaremezwa (Unverified)' },
       ],
     },
     {
@@ -81,8 +75,9 @@ export default function ProfileScreen() {
       'Urashaka gusohoka kuri konti yawe? (Are you sure you want to logout?)',
       [
         { text: 'Hagarika (Cancel)', style: 'cancel' },
-        { text: 'Sohoka (Logout)', style: 'destructive', onPress: () => {
-          Alert.alert('Byarangiye (Success)', 'Wasohokaga neza (You have been logged out successfully)');
+        { text: 'Sohoka (Logout)', style: 'destructive', onPress: async () => {
+          await logout();
+          router.replace('/');
         }},
       ]
     );
@@ -150,13 +145,13 @@ export default function ProfileScreen() {
               </View>
             </View>
             <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>
-              {userInfo.name}
+              {user?.name || 'Umukoresha (User)'}
             </Text>
             <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
-              {userInfo.phone}
+              {user?.phone || '+250 XXX XXX XXX'}
             </Text>
             <Text style={[styles.memberSince, { color: theme.colors.textTertiary }]}>
-              Umunyamuryango kuva {userInfo.memberSince}
+              Umunyamuryango kuva {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('rw-RW', { year: 'numeric', month: 'long' }) : 'Mutarama 2024'}
             </Text>
           </View>
 

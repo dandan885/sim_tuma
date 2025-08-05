@@ -15,14 +15,23 @@ import { Button } from '@/components/ui/Button';
 import { BentoGrid, BentoItem } from '@/components/ui/BentoGrid';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export default function WelcomeScreen() {
   const { theme, isDark } = useTheme();
+  const { isAuthenticated } = useAuth();
   const { isMobile, isTablet } = useResponsive();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
   const [logoScale] = useState(new Animated.Value(0.8));
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
@@ -211,7 +220,7 @@ export default function WelcomeScreen() {
             
             <Button
               title="Mfite Konti (I Have Account)"
-              onPress={() => router.push('/(tabs)')}
+              onPress={() => router.push('/auth/login')}
               variant="outline"
               size={isMobile ? 'medium' : 'large'}
               fullWidth

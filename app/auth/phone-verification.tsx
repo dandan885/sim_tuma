@@ -10,12 +10,23 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Phone, ArrowLeft } from 'lucide-react-native';
+import { ScrollContainer } from '@/components/ui/ScrollContainer';
+import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
+import { Button } from '@/components/ui/Button';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useResponsive } from '@/hooks/useResponsive';
+import { validateMTNNumber, formatPhoneNumber } from '@/constants/AppConstants';
 
 export default function PhoneVerificationScreen() {
+  const { theme } = useTheme();
+  const { register, verifyPhone, isLoading } = useAuth();
+  const { isMobile, width, height } = useResponsive();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
   const [countdown, setCountdown] = useState(0);
+  const [name, setName] = useState('');
 
   useEffect(() => {
     if (countdown > 0) {
@@ -25,227 +36,324 @@ export default function PhoneVerificationScreen() {
   }, [countdown]);
 
   const handleSendOTP = () => {
-    if (!phoneNumber) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+    if (!phoneNumber || !validateMTNNumber(phoneNumber)) {
+      Alert.alert('Ikibazo (Error)', 'Andika nomero ya telefoni nziza (Please enter a valid phone number)');
+      return;
+    }
+    
+    if (!name.trim()) {
+      Alert.alert('Ikibazo (Error)', 'Andika amazina yawe (Please enter your name)');
       return;
     }
     
     // Simulate sending OTP
-    Alert.alert('OTP Sent', `Verification code sent to ${phoneNumber}`);
+    Alert.alert('Kode Yoherejwe (OTP Sent)', `Kode yoherejwe kuri +250${phoneNumber}`);
     setStep('otp');
     setCountdown(60);
   };
 
   const handleVerifyOTP = () => {
     if (otp.length !== 6) {
-      Alert.alert('Error', 'Please enter the 6-digit verification code');
+      Alert.alert('Ikibazo (Error)', 'Andika kode y\'imibare 6 (Please enter the 6-digit verification code)');
       return;
     }
     
-    // Simulate OTP verification
-    Alert.alert('Success', 'Phone number verified successfully!', [
-      { text: 'Continue', onPress: () => router.replace('/(tabs)') }
-    ]);
+    verifyPhone(`+250${phoneNumber}`, otp).then(success => {
+      if (success) {
+        Alert.alert('Byarangiye (Success)', 'Nomero ya telefoni yemejwe neza! (Phone number verified successfully!)', [
+          { text: 'Komeza (Continue)', onPress: () => router.replace('/(tabs)') }
+        ]);
+      } else {
+        Alert.alert('Ikibazo (Error)', 'Kode ntabwo ari yo. Gerageza: 123456 (Invalid code. Try: 123456)');
+      }
+    });
   };
 
   const handleResendOTP = () => {
     if (countdown === 0) {
       setCountdown(60);
-      Alert.alert('OTP Sent', 'New verification code sent!');
+      Alert.alert('Kode Yoherejwe (OTP Sent)', 'Kode nshya yoherejwe! (New verification code sent!)');
     }
   };
 
+  const handlePhoneChange = (text: string) => {
+    const cleaned = text.replace(/\D/g, '').slice(0, 9);
+    setPhoneNumber(cleaned);
+  };
+
+  const styles = createStyles(theme, isMobile, width, height);
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen 
         options={{ 
           headerShown: true,
-          title: step === 'phone' ? 'Enter Phone Number' : 'Verify Phone Number',
+          title: step === 'phone' ? 'Andika Nomero ya Telefoni (Enter Phone)' : 'Emeza Nomero (Verify Phone)',
+          headerStyle: { backgroundColor: theme.colors.surface },
+          headerTintColor: theme.colors.textPrimary,
           headerLeft: () => (
             <TouchableOpacity 
               onPress={() => step === 'otp' ? setStep('phone') : router.back()}
               style={styles.backButton}>
-              <ArrowLeft size={24} color="#6C63FF" />
+              <ArrowLeft size={24} color={theme.colors.primary} />
             </TouchableOpacity>
           ),
         }} 
       />
       
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Phone size={64} color="#6C63FF" />
-        </View>
-
-        {step === 'phone' ? (
-          <>
-            <Text style={styles.title}>Enter Your Phone Number</Text>
-            <Text style={styles.subtitle}>
-              We'll send you a verification code to confirm your number
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.countryCode}>+250</Text>
-              <TextInput
-                style={styles.phoneInput}
-                placeholder="788 123 456"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                keyboardType="phone-pad"
-                placeholderTextColor="#999"
-                maxLength={15}
-              />
+      <ScrollContainer contentContainerStyle={styles.scrollContent}>
+        <ResponsiveContainer maxWidth={400}>
+          <View style={styles.content}>
+            <View style={[styles.iconContainer, { backgroundColor: `${theme.colors.primary}20` }]}>
+              <Phone size={64} color={theme.colors.primary} />
             </View>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={handleSendOTP}>
-              <Text style={styles.primaryButtonText}>Send Verification Code</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text style={styles.title}>Enter Verification Code</Text>
-            <Text style={styles.subtitle}>
-              Enter the 6-digit code sent to {phoneNumber}
-            </Text>
-
-            <TextInput
-              style={styles.otpInput}
-              placeholder="000000"
-              value={otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={6}
-              placeholderTextColor="#999"
-              textAlign="center"
-            />
-
-            <TouchableOpacity style={styles.primaryButton} onPress={handleVerifyOTP}>
-              <Text style={styles.primaryButtonText}>Verify Code</Text>
-            </TouchableOpacity>
-
-            <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>Didn't receive the code?</Text>
-              <TouchableOpacity 
-                onPress={handleResendOTP} 
-                disabled={countdown > 0}
-                style={styles.resendButton}>
-                <Text style={[styles.resendButtonText, countdown > 0 && styles.disabledText]}>
-                  {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
+            {step === 'phone' ? (
+              <>
+                <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+                  Andika Nomero ya Telefoni (Enter Phone Number)
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      </View>
-    </SafeAreaView>
+                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                  Tuzagukohereza kode yo kwemeza nomero yawe (We'll send you a verification code)
+                </Text>
+
+                <View style={styles.form}>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.colors.textPrimary }]}>
+                      Amazina (Full Name)
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.nameInput,
+                        { 
+                          backgroundColor: theme.colors.surfaceVariant,
+                          borderColor: theme.colors.border,
+                          color: theme.colors.textPrimary,
+                        }
+                      ]}
+                      placeholder="Alex Uwimana"
+                      value={name}
+                      onChangeText={setName}
+                      placeholderTextColor={theme.colors.textTertiary}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.inputLabel, { color: theme.colors.textPrimary }]}>
+                      Nomero ya Telefoni (Phone Number)
+                    </Text>
+                    <View style={[
+                      styles.phoneContainer,
+                      { 
+                        backgroundColor: theme.colors.surfaceVariant,
+                        borderColor: theme.colors.border,
+                      }
+                    ]}>
+                      <Text style={[styles.countryCode, { color: theme.colors.textPrimary }]}>+250</Text>
+                      <TextInput
+                        style={[styles.phoneInput, { color: theme.colors.textPrimary }]}
+                        placeholder="788 123 456"
+                        value={formatPhoneNumber(phoneNumber)}
+                        onChangeText={handlePhoneChange}
+                        keyboardType="phone-pad"
+                        placeholderTextColor={theme.colors.textTertiary}
+                        maxLength={11}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                <Button
+                  title="Ohereza Kode (Send Code)"
+                  onPress={handleSendOTP}
+                  variant="primary"
+                  size={isMobile ? 'medium' : 'large'}
+                  fullWidth
+                  disabled={!phoneNumber || !name.trim()}
+                  loading={isLoading}
+                />
+              </>
+            ) : (
+              <>
+                <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
+                  Andika Kode (Enter Code)
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                  Andika kode y'imibare 6 yoherejwe kuri +250{phoneNumber}
+                </Text>
+
+                <TextInput
+                  style={[
+                    styles.otpInput,
+                    { 
+                      backgroundColor: theme.colors.surfaceVariant,
+                      borderColor: theme.colors.border,
+                      color: theme.colors.textPrimary,
+                    }
+                  ]}
+                  placeholder="000000"
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  placeholderTextColor={theme.colors.textTertiary}
+                  textAlign="center"
+                />
+
+                <Button
+                  title="Emeza Kode (Verify Code)"
+                  onPress={handleVerifyOTP}
+                  variant="primary"
+                  size={isMobile ? 'medium' : 'large'}
+                  fullWidth
+                  disabled={otp.length !== 6}
+                  loading={isLoading}
+                  style={styles.verifyButton}
+                />
   );
 }
 
-const styles = StyleSheet.create({
+                <View style={styles.resendContainer}>
+                  <Text style={[styles.resendText, { color: theme.colors.textSecondary }]}>
+                    Ntiwakira kode? (Didn't receive code?)
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={handleResendOTP} 
+                    disabled={countdown > 0}
+                    style={styles.resendButton}>
+                    <Text style={[
+                      styles.resendButtonText, 
+                      { color: countdown > 0 ? theme.colors.textTertiary : theme.colors.primary }
+                    ]}>
+                      {countdown > 0 ? `Tegereza ${countdown}s` : 'Ongera Wohereze (Resend)'}
+                <View style={[styles.demoSection, { backgroundColor: `${theme.colors.info}10`, borderColor: `${theme.colors.info}30` }]}>
+                  <Text style={[styles.demoText, { color: theme.colors.textTertiary }]}>
+                    Demo: Koresha kode 123456 cyangwa 000000 (Use code 123456 or 000000)
+                  </Text>
+                </View>
+              </>
+            )}
+          </View>
+        </ResponsiveContainer>
+      </ScrollContainer>
+    </SafeAreaView>
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+const createStyles = (theme: any, isMobile: boolean, width: number, height: number) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   backButton: {
-    padding: 8,
+    padding: theme.spacing.sm,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: height - 100,
   },
   content: {
     flex: 1,
-    padding: 20,
     justifyContent: 'center',
+    paddingVertical: theme.spacing.xl,
+    minHeight: height * 0.8,
   },
   iconContainer: {
+    width: isMobile ? 120 : 140,
+    height: isMobile ? 120 : 140,
+    borderRadius: isMobile ? 60 : 70,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 40,
+    alignSelf: 'center',
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
+    fontSize: isMobile ? theme.typography.fontSizes.xxl : theme.typography.fontSizes.xxxl,
+    fontWeight: theme.typography.fontWeights.bold,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: theme.spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
     textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 24,
+    marginBottom: theme.spacing.xl,
+    lineHeight: theme.typography.lineHeights.normal * (isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg),
+    paddingHorizontal: theme.spacing.md,
   },
-  inputContainer: {
+  form: {
+    width: '100%',
+    marginBottom: theme.spacing.xl,
+  },
+  inputGroup: {
+    marginBottom: theme.spacing.lg,
+  },
+  inputLabel: {
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginBottom: theme.spacing.sm,
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.medium,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    minHeight: isMobile ? 50 : 56,
+  },
+  phoneContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.medium,
+    paddingHorizontal: theme.spacing.md,
+    minHeight: isMobile ? 50 : 56,
   },
   countryCode: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2F2F2F',
-    marginRight: 12,
-    paddingVertical: 16,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    fontWeight: theme.typography.fontWeights.semibold,
+    marginRight: theme.spacing.sm,
   },
   phoneInput: {
     flex: 1,
-    fontSize: 18,
-    color: '#2F2F2F',
-    paddingVertical: 16,
+    fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+    paddingVertical: theme.spacing.md,
   },
   otpInput: {
-    backgroundColor: '#FAFAFA',
-    borderRadius: 12,
-    paddingVertical: 20,
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2F2F2F',
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderRadius: theme.borderRadius.medium,
+    paddingVertical: theme.spacing.lg,
+    fontSize: isMobile ? 24 : 28,
+    fontWeight: theme.typography.fontWeights.bold,
+    marginBottom: theme.spacing.xl,
     letterSpacing: 8,
+    minHeight: isMobile ? 60 : 70,
   },
-  primaryButton: {
-    backgroundColor: '#6C63FF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#0066CC',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  verifyButton: {
+    marginBottom: theme.spacing.xl,
   },
   resendContainer: {
-    marginTop: 30,
+    marginBottom: theme.spacing.lg,
     alignItems: 'center',
   },
   resendText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    marginBottom: theme.spacing.xs,
   },
   resendButton: {
-    padding: 8,
+    padding: theme.spacing.sm,
   },
   resendButtonText: {
-    fontSize: 16,
-    color: '#6C63FF',
-    fontWeight: '600',
+    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
-  disabledText: {
-    color: '#999',
+  demoSection: {
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.medium,
+    borderWidth: 1,
+  },
+  demoText: {
+    fontSize: theme.typography.fontSizes.sm,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
