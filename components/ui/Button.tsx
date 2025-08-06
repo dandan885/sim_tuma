@@ -90,7 +90,7 @@ export const Button: React.FC<ButtonProps> = ({
         baseStyles.push(styles.primaryButton);
     }
     
-    if (disabled) {
+    if (disabled || loading) {
       baseStyles.push(styles.disabledButton);
     }
     
@@ -164,7 +164,7 @@ export const Button: React.FC<ButtonProps> = ({
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <TouchableOpacity
         style={getButtonStyles()}
-        onPress={handlePress}
+        onPress={loading ? undefined : handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}

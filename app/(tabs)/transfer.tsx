@@ -30,6 +30,8 @@ export default function TransferScreen() {
   const [isValidPhone, setIsValidPhone] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const quickAmounts = [5000, 10000, 25000, 50000];
 
@@ -58,6 +60,37 @@ export default function TransferScreen() {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleTransfer = async () => {
+    if (!phoneNumber.trim()) {
+      setError('Hitamo uwohererezaho / Please select recipient');
+      return;
+    }
+    if (!amount.trim() || parseFloat(amount) <= 0) {
+      setError('Injiza amafaranga / Please enter valid amount');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setSuccess(true);
+      
+      // Reset form after success
+      setTimeout(() => {
+        setAmount('');
+        setPhoneNumber('');
+        setSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setError('Kohereza byanze / Transfer failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSendMoney = () => {
@@ -111,6 +144,28 @@ export default function TransferScreen() {
 
   const styles = createStyles(theme, isMobile, isTablet);
 
+  if (success) {
+    return (
+      <ScrollContainer style={styles.container}>
+        <View style={styles.successContainer}>
+          <CheckCircle size={64} color={theme.colors.success} />
+          <Text style={styles.successTitle}>
+            Byagenze neza! / Success!
+          </Text>
+          <Text style={styles.successMessage}>
+            Amafaranga yoherejwe neza / Money sent successfully
+          </Text>
+          <Text style={styles.successAmount}>
+            {parseFloat(amount).toLocaleString()} RWF
+          </Text>
+          <Text style={styles.successRecipient}>
+            Kuri {phoneNumber} / To {phoneNumber}
+          </Text>
+        </View>
+      </ScrollContainer>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollContainer
@@ -123,8 +178,14 @@ export default function TransferScreen() {
               Kohereza Amafaranga (Send Money)
             </Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              Ohereza amafaranga hamwe na MTN MoMo Rwanda
+              Send money quickly and securely
             </Text>
+
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
           </View>
 
           {/* Quick Actions */}
@@ -171,6 +232,9 @@ export default function TransferScreen() {
                 onChangeText={setPhoneNumber}
                 onValidation={setIsValidPhone}
                 error={errors.phone}
+                placeholder="Jean Baptiste Uwimana"
+                placeholderTextColor={theme.colors.textSecondary}
+                autoCapitalize="words"
               />
             </View>
 
@@ -182,11 +246,12 @@ export default function TransferScreen() {
                 <DollarSign size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { color: theme.colors.textPrimary }]}
-                  placeholder="5000"
+                  placeholder="0"
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="numeric"
                   placeholderTextColor={theme.colors.textTertiary}
+                  returnKeyType="done"
                 />
               </View>
               {errors.amount && (
@@ -238,8 +303,8 @@ export default function TransferScreen() {
 
             <AnimatedButton
               title={isScheduled ? 'Gahunda Kohereza (Schedule Transfer)' : 'Ohereza Amafaranga (Send Money)'}
-              onPress={handleSendMoney}
-              disabled={!isValidPhone || !amount || isLoading}
+              onPress={handleTransfer}
+              disabled={isLoading || !phoneNumber.trim() || !amount.trim()}
               loading={isLoading}
               style={styles.sendButton}
             />
@@ -296,6 +361,52 @@ const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => Style
   },
   subtitle: {
     fontSize: isMobile ? theme.typography.fontSizes.base : theme.typography.fontSizes.lg,
+  },
+  errorContainer: {
+    backgroundColor: theme.colors.error + '20',
+    borderColor: theme.colors.error,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  successTitle: {
+    fontSize: isTablet ? 28 : 24,
+    fontWeight: '700',
+    color: theme.colors.success,
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  successAmount: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  successRecipient: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
   quickActions: {
     flexDirection: 'row',
@@ -387,10 +498,6 @@ const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => Style
     fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
     fontWeight: theme.typography.fontWeights.semibold,
   },
-  errorText: {
-    fontSize: theme.typography.fontSizes.sm,
-    marginTop: theme.spacing.xs,
-  },
   sendButton: {
     marginTop: theme.spacing.md,
   },
@@ -438,5 +545,12 @@ const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => Style
   },
   contactPhone: {
     fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
+  },
+  transferButton: {
+    marginTop: 32,
+    minHeight: 56,
+  },
+  transferButtonText: {
+    fontSize: 16,
   },
 });
