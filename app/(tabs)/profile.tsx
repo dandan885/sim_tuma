@@ -43,7 +43,7 @@ export default function ProfileScreen() {
     {
       title: 'Amakuru ya Konti (Account Information)',
       items: [
-        { icon: User, label: 'Amakuru Bwite (Personal Details)', labelEn: 'Personal Details', value: userInfo.name },
+        { icon: User, label: 'Amakuru Bwite (Personal Details)', labelEn: 'Personal Details', value: user?.name },
         { icon: Phone, label: 'Nomero ya Telefoni (Phone Number)', labelEn: 'Phone Number', value: user?.phone },
         { icon: Mail, label: 'Aderesi ya Email (Email Address)', labelEn: 'Email Address', value: user?.email || 'Ntabwo yasobanuwe (Not provided)' },
         { icon: Shield, label: 'Uko Konti imeze (Account Status)', labelEn: 'Account Status', value: user?.isVerified ? 'Byemejwe (Verified)' : 'Bitaremezwa (Unverified)' },
