@@ -1,79 +1,94 @@
 import { useState, useEffect } from 'react';
-import { mtnAPI } from '@/services/mtnApi';
 
 export interface Transaction {
   id: string;
-  type: 'sent' | 'received' | 'bill_payment';
+  type: 'sent' | 'received';
   amount: number;
-  currency: string;
-  description: string;
-  recipient?: string;
   sender?: string;
-  timestamp: Date;
+  recipient?: string;
+  timestamp: string;
   status: 'completed' | 'pending' | 'failed';
-  reference: string;
+  description?: string;
 }
 
-export const useTransactionHistory = () => {
+export function useTransactionHistory() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock transaction data with realistic Rwanda context
   const mockTransactions: Transaction[] = [
     {
-      id: 'txn_001',
+      id: '1',
+      type: 'received',
+      amount: 15000,
+      sender: 'Jean Baptiste Uwimana',
+      timestamp: '2 min ago',
+      status: 'completed',
+      description: 'Kwishyura / Payment received'
+    },
+    {
+      id: '2',
+      type: 'sent',
+      amount: 8500,
+      recipient: 'EUCL',
+      timestamp: '1 hour ago',
+      status: 'completed',
+      description: 'Amashanyarazi / Electricity bill'
+    },
+    {
+      id: '3',
+      type: 'received',
+      amount: 25000,
+      sender: 'Marie Claire Mukamana',
+      timestamp: '3 hours ago',
+      status: 'completed',
+      description: 'Ubufasha / Financial support'
+    },
+    {
+      id: '4',
+      type: 'sent',
+      amount: 12000,
+      recipient: 'WASAC',
+      timestamp: '1 day ago',
+      status: 'completed',
+      description: 'Amazi / Water bill'
+    },
+    {
+      id: '5',
       type: 'received',
       amount: 50000,
-      currency: 'RWF',
-      description: 'Amafaranga yakiriye (Payment received)',
-      sender: 'Jean Claude Uwimana',
-      timestamp: new Date('2024-01-15T10:30:00'),
+      sender: 'Emmanuel Nkurunziza',
+      timestamp: '2 days ago',
       status: 'completed',
-      reference: 'REF001',
+      description: 'Ubucuruzi / Business payment'
     },
     {
-      id: 'txn_002',
+      id: '6',
       type: 'sent',
-      amount: 25000,
-      currency: 'RWF',
-      description: 'Kohereza amafaranga (Money transfer)',
-      recipient: 'Marie Mukamana',
-      timestamp: new Date('2024-01-14T15:20:00'),
+      amount: 5000,
+      recipient: 'Airtel Rwanda',
+      timestamp: '3 days ago',
       status: 'completed',
-      reference: 'REF002',
+      description: 'Airtime / Phone credit'
     },
     {
-      id: 'txn_003',
-      type: 'bill_payment',
-      amount: 15000,
-      currency: 'RWF',
-      description: 'Fagitire ya EUCL (EUCL electricity bill)',
-      timestamp: new Date('2024-01-13T09:15:00'),
-      status: 'completed',
-      reference: 'REF003',
-    },
-    {
-      id: 'txn_004',
+      id: '7',
       type: 'received',
-      amount: 75000,
-      currency: 'RWF',
-      description: 'Mushahara (Salary payment)',
-      sender: 'Rwanda Development Bank',
-      timestamp: new Date('2024-01-12T14:00:00'),
+      amount: 30000,
+      sender: 'Grace Uwimana',
+      timestamp: '1 week ago',
       status: 'completed',
-      reference: 'REF004',
+      description: 'Umuryango / Family support'
     },
     {
-      id: 'txn_005',
-      type: 'bill_payment',
-      amount: 8500,
-      currency: 'RWF',
-      description: 'Fagitire ya WASAC (WASAC water bill)',
-      timestamp: new Date('2024-01-11T11:30:00'),
+      id: '8',
+      type: 'sent',
+      amount: 18000,
+      recipient: 'Inyama n\'Amaru Store',
+      timestamp: '1 week ago',
       status: 'completed',
-      reference: 'REF005',
-    },
+      description: 'Kugura / Shopping'
+    }
   ];
 
   const fetchTransactions = async () => {
@@ -81,30 +96,27 @@ export const useTransactionHistory = () => {
       setIsLoading(true);
       setError(null);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       setTransactions(mockTransactions);
     } catch (err) {
-      setError('Ikibazo cyo gukuramo ibikorwa (Failed to fetch transactions)');
-      setTransactions(mockTransactions); // Fallback to mock data
+      setError('Ntitwashoboye gushakisha amateka / Unable to load transaction history');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const refreshTransactions = async () => {
-    await fetchTransactions();
   };
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
+  const refetch = () => fetchTransactions();
+
   return {
     transactions,
     isLoading,
     error,
-    refreshTransactions,
+    refetch
   };
-};
+}
