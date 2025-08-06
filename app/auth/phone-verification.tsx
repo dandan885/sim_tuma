@@ -12,7 +12,7 @@ import { ArrowLeft, Shield, Smartphone } from 'lucide-react-native';
 
 export default function PhoneVerificationScreen() {
   const { login } = useAuth();
-  const { theme, colors } = useTheme();
+  const { theme } = useTheme();
   const { width, isTablet } = useResponsive();
   
   const [name, setName] = useState('');
@@ -21,7 +21,7 @@ export default function PhoneVerificationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'name' | 'otp'>('name');
 
-  const styles = createStyles(colors, width, isTablet);
+  const styles = createStyles(theme.colors, width, isTablet);
 
   const handleNameSubmit = () => {
     if (!name.trim()) {
