@@ -93,11 +93,11 @@ export default function WalletScreen() {
       key={index}
       style={[
         styles.actionButton,
-        { backgroundColor: action.color },
+        { backgroundColor: action.color || theme.colors.primary },
       ]}
       onPress={() => router.push(action.route)}
       activeOpacity={0.8}>
-      <action.icon size={isMobile ? 24 : 28} color={theme.colors.textInverse} />
+      <action.icon size={isMobile ? 24 : 28} color={theme.colors.textInverse || '#FFFFFF'} />
       <Text style={styles.actionLabel}>
         {action.label}
       </Text>

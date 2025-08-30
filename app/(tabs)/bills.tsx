@@ -241,7 +241,7 @@ export default function BillsScreen() {
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="numeric"
-                placeholderTextColor={theme.colors.textTertiary}
+                placeholderTextColor={theme.colors.textTertiary || '#9CA3AF'}
               />
             </View>
 

@@ -143,7 +143,7 @@ export default function LoginScreen() {
                     value={formatPhoneNumber(phoneNumber)}
                     onChangeText={handlePhoneChange}
                     keyboardType="phone-pad"
-                    placeholderTextColor={theme.colors.textTertiary}
+                    placeholderTextColor={theme.colors.textTertiary || '#9CA3AF'}
                     maxLength={11}
                   />
                 </View>

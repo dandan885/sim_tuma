@@ -297,7 +297,7 @@ export default function TransferScreen() {
                 value={note}
                 onChangeText={setNote}
                 multiline
-                placeholderTextColor={theme.colors.textTertiary}
+                placeholderTextColor={theme.colors.textTertiary || '#9CA3AF'}
               />
             </View>
 
