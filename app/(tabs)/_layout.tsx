@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Wallet, Send, MessageCircle, Receipt, User } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { ProtectedRoute } from '@/components/ui/ProtectedRoute';
 
 export default function TabLayout() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <ProtectedRoute>
@@ -34,7 +36,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Amafaranga (Wallet)',
+            title: t.wallet,
             tabBarIcon: ({ size, color }) => (
               <Wallet size={size} color={color} />
             ),
@@ -43,7 +45,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="transfer"
           options={{
-            title: 'Kohereza (Send)',
+            title: t.send,
             tabBarIcon: ({ size, color }) => (
               <Send size={size} color={color} />
             ),
@@ -52,7 +54,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="chat"
           options={{
-            title: 'Ubutumwa (Chat)',
+            title: t.chat,
             tabBarIcon: ({ size, color }) => (
               <MessageCircle size={size} color={color} />
             ),
@@ -61,7 +63,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="bills"
           options={{
-            title: 'Fagitire (Bills)',
+            title: t.bills,
             tabBarIcon: ({ size, color }) => (
               <Receipt size={size} color={color} />
             ),
@@ -70,7 +72,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'Umwirondoro (Profile)',
+            title: t.profile,
             tabBarIcon: ({ size, color }) => (
               <User size={size} color={color} />
             ),

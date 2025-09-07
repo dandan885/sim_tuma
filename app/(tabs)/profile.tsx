@@ -23,59 +23,65 @@ import {
   Eye,
   Moon,
   Sun,
+  Globe,
 } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { ScrollContainer } from '@/components/ui/ScrollContainer';
 import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export default function ProfileScreen() {
   const { theme, isDark } = useTheme();
+  const { t, language, setLanguage, availableLanguages } = useLanguage();
   const { user, logout } = useAuth();
   const { isMobile, isTablet } = useResponsive();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
 
   const profileSections = [
     {
-      title: 'Amakuru ya Konti (Account Information)',
+      title: 'Account Information',
       items: [
-        { icon: User, label: 'Amakuru Bwite (Personal Details)', labelEn: 'Personal Details', value: user?.name },
-        { icon: Phone, label: 'Nomero ya Telefoni (Phone Number)', labelEn: 'Phone Number', value: user?.phone },
-        { icon: Mail, label: 'Aderesi ya Email (Email Address)', labelEn: 'Email Address', value: user?.email || 'Ntabwo yasobanuwe (Not provided)' },
-        { icon: Shield, label: 'Uko Konti imeze (Account Status)', labelEn: 'Account Status', value: user?.isVerified ? 'Byemejwe (Verified)' : 'Bitaremezwa (Unverified)' },
+        { icon: User, label: t.personalDetails, value: user?.name },
+        { icon: Phone, label: t.phoneNumber, value: user?.phone },
+        { icon: Mail, label: 'Email Address', value: user?.email || 'Not provided' },
+        { icon: Shield, label: 'Account Status', value: user?.isVerified ? 'Verified' : 'Unverified' },
       ],
     },
     {
-      title: 'Igenamiterere rya Umutekano (Security Settings)',
+      title: 'Security Settings',
       items: [
-        { icon: Lock, label: 'Hindura PIN (Change PIN)', labelEn: 'Change PIN', hasChevron: true },
-        { icon: Smartphone, label: 'Kwinjira na Biometric (Biometric Login)', labelEn: 'Biometric Login', hasSwitch: true, value: biometricsEnabled, onToggle: setBiometricsEnabled },
-        { icon: Shield, label: 'Umutekano wa Kabiri (Two-Factor Auth)', labelEn: 'Two-Factor Auth', hasSwitch: true, value: twoFactorEnabled, onToggle: setTwoFactorEnabled },
-        { icon: Eye, label: 'Igenamiterere rya Bwite (Privacy Settings)', labelEn: 'Privacy Settings', hasChevron: true },
+        { icon: Lock, label: 'Change PIN', hasChevron: true },
+        { icon: Smartphone, label: 'Biometric Login', hasSwitch: true, value: biometricsEnabled, onToggle: setBiometricsEnabled },
+        { icon: Shield, label: 'Two-Factor Auth', hasSwitch: true, value: twoFactorEnabled, onToggle: setTwoFactorEnabled },
+        { icon: Eye, label: 'Privacy Settings', hasChevron: true },
       ],
     },
     {
-      title: 'Ibyo Uhitamo (Preferences)',
+      title: 'Preferences',
       items: [
-        { icon: Bell, label: 'Ubutumwa (Notifications)', labelEn: 'Notifications', hasSwitch: true, value: notificationsEnabled, onToggle: setNotificationsEnabled },
-        { icon: isDark ? Moon : Sun, label: 'Imiterere (Theme)', labelEn: 'Theme', hasCustom: true },
-        { icon: CreditCard, label: 'Uburyo bwo Kwishyura (Payment Methods)', labelEn: 'Payment Methods', hasChevron: true },
-        { icon: Settings, label: 'Igenamiterere rya Porogaramu (App Settings)', labelEn: 'App Settings', hasChevron: true },
+        { icon: Bell, label: t.notifications, hasSwitch: true, value: notificationsEnabled, onToggle: setNotificationsEnabled },
+        { icon: Globe, label: t.language, hasCustom: true, customType: 'language' },
+        { icon: isDark ? Moon : Sun, label: t.theme, hasCustom: true, customType: 'theme' },
+        { icon: CreditCard, label: 'Payment Methods', hasChevron: true },
+        { icon: Settings, label: 'App Settings', hasChevron: true },
       ],
     },
   ];
 
   const handleLogout = () => {
     Alert.alert(
-      'Gusohoka (Logout)',
-      'Urashaka gusohoka kuri konti yawe? (Are you sure you want to logout?)',
+      'Logout',
+      'Are you sure you want to logout?',
       [
-        { text: 'Hagarika (Cancel)', style: 'cancel' },
-        { text: 'Sohoka (Logout)', style: 'destructive', onPress: async () => {
+        { text: t.cancel, style: 'cancel' },
+        { text: t.logout, style: 'destructive', onPress: async () => {
           await logout();
           router.replace('/');
         }},
@@ -83,6 +89,10 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleLanguageSelect = (langCode: any) => {
+    setLanguage(langCode);
+    setShowLanguageSelector(false);
+  };
   const styles = createStyles(theme, isMobile, isTablet);
 
   const renderProfileItem = (item: any, index: number) => (
@@ -94,9 +104,6 @@ export default function ProfileScreen() {
         <View style={styles.itemContent}>
           <Text style={[styles.itemLabel, { color: theme.colors.textPrimary }]}>
             {item.label}
-          </Text>
-          <Text style={[styles.itemLabelEn, { color: theme.colors.textSecondary }]}>
-            {item.labelEn}
           </Text>
           {item.value && !item.hasSwitch && !item.hasCustom && (
             <Text style={[styles.itemValue, { color: theme.colors.textSecondary }]}>
@@ -114,8 +121,18 @@ export default function ProfileScreen() {
             thumbColor={item.value ? theme.colors.primary : theme.colors.surface}
           />
         )}
-        {item.hasCustom && item.label.includes('Imiterere') && (
+        {item.hasCustom && item.customType === 'theme' && (
           <ThemeToggle size={20} />
+        )}
+        {item.hasCustom && item.customType === 'language' && (
+          <TouchableOpacity 
+            onPress={() => setShowLanguageSelector(!showLanguageSelector)}
+            style={styles.languageSelector}>
+            <Text style={[styles.languageText, { color: theme.colors.textSecondary }]}>
+              {availableLanguages.find(l => l.code === language)?.flag} {availableLanguages.find(l => l.code === language)?.name}
+            </Text>
+            <ChevronRight size={16} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
         )}
         {item.hasChevron && (
           <ChevronRight size={20} color={theme.colors.textSecondary} />
@@ -124,13 +141,42 @@ export default function ProfileScreen() {
     </TouchableOpacity>
   );
 
+  const renderLanguageOptions = () => {
+    if (!showLanguageSelector) return null;
+    
+    return (
+      <View style={[styles.languageOptions, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        {availableLanguages.map((lang) => (
+          <TouchableOpacity
+            key={lang.code}
+            style={[
+              styles.languageOption,
+              { borderBottomColor: theme.colors.borderLight },
+              language === lang.code && { backgroundColor: `${theme.colors.primary}10` }
+            ]}
+            onPress={() => handleLanguageSelect(lang.code)}>
+            <Text style={styles.languageFlag}>{lang.flag}</Text>
+            <Text style={[
+              styles.languageName, 
+              { color: language === lang.code ? theme.colors.primary : theme.colors.textPrimary }
+            ]}>
+              {lang.name}
+            </Text>
+            {language === lang.code && (
+              <View style={[styles.selectedIndicator, { backgroundColor: theme.colors.primary }]} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollContainer contentContainerStyle={styles.scrollContent}>
         <ResponsiveContainer maxWidth={600}>
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-              Umwirondoro (Profile)
+              {t.profile}
             </Text>
           </View>
 
@@ -138,20 +184,22 @@ export default function ProfileScreen() {
           <View style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <View style={styles.avatarContainer}>
               <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
-                <Text style={[styles.avatarText, { color: theme.colors.textInverse }]}>AU</Text>
+                <Text style={[styles.avatarText, { color: theme.colors.textInverse }]}>
+                  {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                </Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: theme.colors.secondary, borderColor: theme.colors.surface }]}>
                 <Shield size={12} color={theme.colors.textInverse} />
               </View>
             </View>
             <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>
-              {user?.name || 'Umukoresha (User)'}
+              {user?.name || 'User'}
             </Text>
             <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
               {user?.phone || '+250 XXX XXX XXX'}
             </Text>
             <Text style={[styles.memberSince, { color: theme.colors.textTertiary }]}>
-              Umunyamuryango kuva {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('rw-RW', { year: 'numeric', month: 'long' }) : 'Mutarama 2024'}
+              Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : 'January 2024'}
             </Text>
           </View>
 
@@ -164,6 +212,7 @@ export default function ProfileScreen() {
               <View style={[styles.sectionContent, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                 {section.items.map(renderProfileItem)}
               </View>
+              {sectionIndex === 2 && renderLanguageOptions()}
             </View>
           ))}
 
@@ -173,14 +222,14 @@ export default function ProfileScreen() {
             onPress={handleLogout}>
             <LogOut size={20} color={theme.colors.error} />
             <Text style={[styles.logoutText, { color: theme.colors.error }]}>
-              Sohoka (Logout)
+              {t.logout}
             </Text>
           </TouchableOpacity>
 
           {/* App Version */}
           <View style={styles.appVersion}>
             <Text style={[styles.versionText, { color: theme.colors.textSecondary }]}>
-              SimTuma Rwanda v2.1.0
+              SimTuma v2.1.0
             </Text>
             <Text style={[styles.buildText, { color: theme.colors.textTertiary }]}>
               Build 2024.01.15
@@ -305,17 +354,46 @@ const createStyles = (theme: any, isMobile: boolean, isTablet: boolean) => Style
     fontWeight: theme.typography.fontWeights.medium,
     marginBottom: theme.spacing.xs,
   },
-  itemLabelEn: {
-    fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
-    fontStyle: 'italic',
-    marginBottom: theme.spacing.xs,
-  },
   itemValue: {
     fontSize: isMobile ? theme.typography.fontSizes.sm : theme.typography.fontSizes.base,
   },
   itemRight: {
     alignItems: 'center',
     marginLeft: theme.spacing.md,
+  },
+  languageSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  languageText: {
+    fontSize: theme.typography.fontSizes.sm,
+  },
+  languageOptions: {
+    marginTop: theme.spacing.md,
+    borderRadius: theme.borderRadius.medium,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+    position: 'relative',
+  },
+  languageFlag: {
+    fontSize: 20,
+    marginRight: theme.spacing.md,
+  },
+  languageName: {
+    fontSize: theme.typography.fontSizes.base,
+    flex: 1,
+  },
+  selectedIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   logoutButton: {
     flexDirection: 'row',

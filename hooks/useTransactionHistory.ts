@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 
 export interface Transaction {
   id: string;
-  type: 'sent' | 'received';
+  type: 'sent' | 'received' | 'bill_payment';
   amount: number;
   sender?: string;
   recipient?: string;
-  timestamp: string;
+  timestamp: Date;
   status: 'completed' | 'pending' | 'failed';
   description?: string;
 }
@@ -21,73 +21,73 @@ export function useTransactionHistory() {
       id: '1',
       type: 'received',
       amount: 15000,
-      sender: 'Jean Baptiste Uwimana',
-      timestamp: '2 min ago',
+      sender: 'John Smith',
+      timestamp: new Date(Date.now() - 2 * 60 * 1000),
       status: 'completed',
-      description: 'Kwishyura / Payment received'
+      description: 'Payment received'
     },
     {
       id: '2',
-      type: 'sent',
+      type: 'bill_payment',
       amount: 8500,
       recipient: 'EUCL',
-      timestamp: '1 hour ago',
+      timestamp: new Date(Date.now() - 60 * 60 * 1000),
       status: 'completed',
-      description: 'Amashanyarazi / Electricity bill'
+      description: 'Electricity bill'
     },
     {
       id: '3',
       type: 'received',
       amount: 25000,
-      sender: 'Marie Claire Mukamana',
-      timestamp: '3 hours ago',
+      sender: 'Sarah Johnson',
+      timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
       status: 'completed',
-      description: 'Ubufasha / Financial support'
+      description: 'Financial support'
     },
     {
       id: '4',
-      type: 'sent',
+      type: 'bill_payment',
       amount: 12000,
       recipient: 'WASAC',
-      timestamp: '1 day ago',
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
       status: 'completed',
-      description: 'Amazi / Water bill'
+      description: 'Water bill'
     },
     {
       id: '5',
       type: 'received',
       amount: 50000,
-      sender: 'Emmanuel Nkurunziza',
-      timestamp: '2 days ago',
+      sender: 'Michael Brown',
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       status: 'completed',
-      description: 'Ubucuruzi / Business payment'
+      description: 'Business payment'
     },
     {
       id: '6',
       type: 'sent',
       amount: 5000,
-      recipient: 'Airtel Rwanda',
-      timestamp: '3 days ago',
+      recipient: 'David Wilson',
+      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       status: 'completed',
-      description: 'Airtime / Phone credit'
+      description: 'Money transfer'
     },
     {
       id: '7',
       type: 'received',
       amount: 30000,
-      sender: 'Grace Uwimana',
-      timestamp: '1 week ago',
+      sender: 'Emma Davis',
+      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       status: 'completed',
-      description: 'Umuryango / Family support'
+      description: 'Family support'
     },
     {
       id: '8',
       type: 'sent',
       amount: 18000,
-      recipient: 'Inyama n\'Amaru Store',
-      timestamp: '1 week ago',
+      recipient: 'Local Store',
+      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       status: 'completed',
-      description: 'Kugura / Shopping'
+      description: 'Shopping'
     }
   ];
 
@@ -101,7 +101,7 @@ export function useTransactionHistory() {
       
       setTransactions(mockTransactions);
     } catch (err) {
-      setError('Ntitwashoboye gushakisha amateka / Unable to load transaction history');
+      setError('Unable to load transaction history');
     } finally {
       setIsLoading(false);
     }
@@ -111,12 +111,12 @@ export function useTransactionHistory() {
     fetchTransactions();
   }, []);
 
-  const refetch = () => fetchTransactions();
+  const refreshTransactions = () => fetchTransactions();
 
   return {
     transactions,
     isLoading,
     error,
-    refetch
+    refreshTransactions
   };
 }

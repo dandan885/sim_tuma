@@ -28,10 +28,14 @@ import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useResponsive } from '@/hooks/useResponsive';
 
 export default function WalletScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { user } = useAuth();
   const { isMobile, isTablet } = useResponsive();
   const [fadeAnim] = useState(new Animated.Value(0));
   const { balance, isLoading, error, isHidden, toggleBalanceVisibility, refreshBalance } = useBalance();
@@ -55,29 +59,25 @@ export default function WalletScreen() {
   const quickActions = [
     { 
       icon: ArrowUpRight, 
-      label: 'Kohereza', 
-      labelEn: 'Send', 
+      label: t.send,
       color: theme.colors.primary,
       route: '/transfer'
     },
     { 
       icon: ArrowDownLeft, 
-      label: 'Saba', 
-      labelEn: 'Request', 
+      label: 'Request',
       color: theme.colors.secondary,
       route: '/request'
     },
     { 
       icon: CreditCard, 
-      label: 'Fagitire', 
-      labelEn: 'Bills', 
+      label: t.bills,
       color: theme.colors.accent,
       route: '/bills'
     },
     { 
       icon: Clock, 
-      label: 'Gahunda', 
-      labelEn: 'Schedule', 
+      label: 'Schedule',
       color: theme.colors.info,
       route: '/schedule'
     },
@@ -100,9 +100,6 @@ export default function WalletScreen() {
       <action.icon size={isMobile ? 24 : 28} color={theme.colors.textInverse || '#FFFFFF'} />
       <Text style={styles.actionLabel}>
         {action.label}
-      </Text>
-      <Text style={styles.actionLabelEn}>
-        {action.labelEn}
       </Text>
     </TouchableOpacity>
   );
@@ -161,10 +158,10 @@ export default function WalletScreen() {
         </Text>
         <View style={[
           styles.statusBadge,
-          { backgroundColor: transaction.status === 'completed' ? theme.colors.secondary : theme.colors.warning }
+          { backgroundColor: transaction.status === 'completed' ? theme.colors.success : theme.colors.warning }
         ]}>
           <Text style={[styles.statusText, { color: theme.colors.textInverse }]}>
-            {transaction.status === 'completed' ? 'Byarangiye' : 'Bitegereje'}
+            {transaction.status === 'completed' ? t.completed : t.pending}
           </Text>
         </View>
       </View>
@@ -174,7 +171,7 @@ export default function WalletScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <LoadingState message="Gukuramo amakuru... (Loading data...)" />
+        <LoadingState message={t.loading} />
       </SafeAreaView>
     );
   }
@@ -183,7 +180,7 @@ export default function WalletScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <ErrorState 
-          title="Ikibazo cyo gukuramo amakuru (Data Loading Error)"
+          title="Data Loading Error"
           message={error}
           onRetry={refreshBalance}
         />
@@ -208,10 +205,10 @@ export default function WalletScreen() {
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
-                Mwaramutse! (Good morning!)
+                Good morning!
               </Text>
               <Text style={[styles.username, { color: theme.colors.textPrimary }]}>
-                Murakaza neza, Alex
+                Welcome, {user?.name || 'User'}
               </Text>
             </View>
             <TouchableOpacity 
@@ -219,7 +216,7 @@ export default function WalletScreen() {
               onPress={() => router.push('/(tabs)/profile')}>
               <View style={[styles.profileAvatar, { backgroundColor: theme.colors.primary }]}>
                 <Text style={[styles.profileAvatarText, { color: theme.colors.textInverse }]}>
-                  AU
+                  {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
                 </Text>
               </View>
               <Settings size={16} color={theme.colors.textSecondary} style={styles.settingsIcon} />
@@ -237,7 +234,7 @@ export default function WalletScreen() {
             <View style={styles.balanceHeader}>
               <View style={styles.balanceInfo}>
                 <Text style={[styles.balanceLabel, { color: `${theme.colors.textInverse}90` }]}>
-                  Amafaranga Yose (Total Balance)
+                  {t.totalBalance}
                 </Text>
                 <Text style={[styles.balanceAmount, { color: theme.colors.textInverse }]}>
                   {displayBalance}
@@ -260,13 +257,13 @@ export default function WalletScreen() {
                   **** **** **** 1234
                 </Text>
                 <Text style={[styles.cardType, { color: `${theme.colors.textInverse}60` }]}>
-                  MTN MoMo Rwanda
+                  Mobile Money
                 </Text>
               </View>
               <TouchableOpacity style={[styles.addMoneyButton, { backgroundColor: theme.colors.textInverse }]}>
                 <Plus size={16} color={theme.colors.primary} />
                 <Text style={[styles.addMoneyText, { color: theme.colors.primary }]}>
-                  Kongeramo (Add)
+                  Add Money
                 </Text>
               </TouchableOpacity>
             </View>
@@ -275,7 +272,7 @@ export default function WalletScreen() {
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
             <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-              Ibikorwa Byihuse (Quick Actions)
+              Quick Actions
             </Text>
             <View style={styles.quickActions}>
               {quickActions.map(renderQuickAction)}
@@ -288,7 +285,7 @@ export default function WalletScreen() {
               <TrendingUp size={24} color={theme.colors.secondary} />
               <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>+12%</Text>
               <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                Ukwezi gushize (This month)
+                This month
               </Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -297,7 +294,7 @@ export default function WalletScreen() {
                 {transactions.length}
               </Text>
               <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
-                Ibikorwa (Transactions)
+                Transactions
               </Text>
             </View>
           </View>
@@ -306,17 +303,17 @@ export default function WalletScreen() {
           <View style={styles.transactionsSection}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>
-                Ibikorwa Bya Vuba (Recent Transactions)
+                {t.recentTransactions}
               </Text>
               <TouchableOpacity>
                 <Text style={[styles.viewAll, { color: theme.colors.primary }]}>
-                  Byose (View All)
+                  View All
                 </Text>
               </TouchableOpacity>
             </View>
 
             {transactionsLoading ? (
-              <LoadingState size="small" message="Gukuramo ibikorwa... (Loading transactions...)" />
+              <LoadingState size="small" message="Loading transactions..." />
             ) : recentTransactions.length > 0 ? (
               <View style={[styles.transactionsList, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
                 {recentTransactions.map(renderTransaction)}
@@ -325,10 +322,10 @@ export default function WalletScreen() {
               <View style={[styles.emptyState, { backgroundColor: theme.colors.surface }]}>
                 <CreditCard size={48} color={theme.colors.textTertiary} />
                 <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                  Nta bikorwa (No transactions yet)
+                  No transactions yet
                 </Text>
                 <Text style={[styles.emptySubtext, { color: theme.colors.textTertiary }]}>
-                  Tangira kohereza cyangwa kwakira amafaranga
+                  Start sending or receiving money
                 </Text>
               </View>
             )}
